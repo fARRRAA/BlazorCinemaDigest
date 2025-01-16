@@ -1,0 +1,54 @@
+﻿@using BlazorCinemaDigest.ApiRequest.Services
+@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@using Microsoft.JSInterop;
+@inject IJSRuntime JSRuntime
+<div class="page">
+	<div class="sidebar">
+		<NavMenu />
+	</div>
+
+	<main>
+		<div class="nav-item px-3 d-flex gap-4 align-items-center" d-flex gap-4>
+			<NavLink class="nav-link" href="login">
+				<span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Login
+			</NavLink>
+			@if (@UserService.IsAuthenticated)
+			{
+				<div class="d-flex gap-2">
+					<p class="fs-6 text-primary mt-3">User: </p>
+					<p class="fs-7 mt-3">@UserService.CurrentUser.userId</p>
+				</div>
+			}
+			@if (@UserService.IsAuthenticated&&@UserService.CurrentUser.role == "admin")
+			{
+				<NavLink class="nav-link" href="/admin">
+					<span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Admin
+				</NavLink>
+			}
+			@if (@UserService.IsAuthenticated)
+			{
+				<button class="btn btn-danger" @onclick="()=>LogOut()" aria-hidden="true">Logout</button>
+			}
+		</div>
+		<article class="content px-4">
+			@Body
+		</article>
+	</main>
+</div>
+
+
+<div id="blazor-error-ui">
+	An unhandled error has occurred.
+	<a href="" class="reload">Reload</a>
+	<a class="dismiss">🗙</a>
+</div>
+
+@code {
+	@inject UserService UserService
+	void LogOut()
+	{
+		UserService.UnsetUser(UserService.CurrentUser);
+		Navigation.NavigateTo("/");
+	}
+}

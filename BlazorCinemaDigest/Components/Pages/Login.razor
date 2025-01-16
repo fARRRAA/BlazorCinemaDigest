@@ -1,0 +1,60 @@
+﻿@page "/login"
+@rendermode InteractiveServer
+@using BlazorCinemaDigest.ApiRequest
+@using BlazorCinemaDigest.ApiRequest.Model
+@using BlazorCinemaDigest.ApiRequest.Services
+@inject NavigationManager Navigation
+
+
+<h3>Login</h3>
+<div class="d-flex align-items-center h-custom-2 px-5 ms-xl-4 mt-5 pt-5 pt-xl-0 mt-xl-n5">
+	<form style="width: 23rem;">
+		<div class="form-outline mb-4">
+			<label class="form-label" for="form2Example28">Login</label>
+			<input type="text" @bind="@loginRequest.login" id="form2Example28" class="form-control form-control-lg" />
+		</div>
+		<div class="form-outline mb-4">
+			<label class="form-label" for="form2Example28">Password</label>
+			<input type="password" @bind="@loginRequest.password" id="form2Example28" class="form-control form-control-lg" />
+		</div>
+		<div class="pt-1 mb-4">
+			<button class="btn btn-info btn-lg btn-block" @onclick="()=>LoginAsync()" type="button">Войти</button>
+		</div>
+		<NavLink class="nav-link" href="/register" Match="NavLinkMatch.All">
+			Нет аккаунта?<span class="bi bi-house-door-fill-nav-menu text-primary" aria-hidden="true"></span>Зарегистрироваться
+		</NavLink>
+	</form>
+</div>
+@if (error != null)
+{
+	<div class="alert alert-danger">@error</div>
+}
+@if (success != null)
+{
+	<div class="alert alert-success">@success</div>
+}
+@code {
+
+	@inject UserService UserService
+	LoginRequest loginRequest = new LoginRequest();
+	[Inject] private ApiRequestService ApiRequest { get; set; }
+	string error;
+	string success;
+	async void LoginAsync()
+	{
+
+		var login = await ApiRequest.Login(loginRequest.login, loginRequest.password);
+		await Task.Yield();
+		if (login.userId == 0||login.role==null)
+		{
+			error = "invalid, try again";
+			return;
+		}
+		success = $"Вы успешно вошли в систему";
+		StateHasChanged();
+		UserService.SetUser(login);
+		await Task.Delay(700);
+		Navigation.NavigateTo($"/user/{login.userId}");
+
+	}
+}

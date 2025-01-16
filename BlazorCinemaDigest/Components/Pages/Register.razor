@@ -1,0 +1,79 @@
+﻿@page "/register"
+@rendermode InteractiveServer
+@using BlazorCinemaDigest.ApiRequest
+@using BlazorCinemaDigest.ApiRequest.Model
+@using BlazorCinemaDigest.ApiRequest.Services
+
+
+<h3>Register</h3>
+<div class="d-flex align-items-center h-custom-2 px-5 ms-xl-4 mt-5 pt-5 pt-xl-0 mt-xl-n5">
+    <form style="width: 23rem;">
+        <div class="form-outline mb-4">
+            <label class="form-label" for="form2Example28">Name</label>
+            <input type="text" @bind="@reqDataUser.name" id="form2Example28" class="form-control form-control-lg" />
+        </div>
+        <div class="form-outline mb-4">
+            <label class="form-label" for="form2Example28">Email</label>
+            <input type="text" @bind="@reqDataUser.email" id="form2Example28" class="form-control form-control-lg" />
+        </div>
+        <div class="form-outline mb-4">
+            <label class="form-label" for="form2Example28">Description</label>
+            <input type="text" @bind="@reqDataUser.description" id="form2Example28" class="form-control form-control-lg" />
+        </div>
+        <div class="form-outline mb-4">
+            <label class="form-label" for="form2Example28">Login</label>
+            <input type="text" @bind="@reqDataUser.login" id="form2Example28" class="form-control form-control-lg" />
+        </div>
+        <div class="form-outline mb-4">
+            <label class="form-label" for="form2Example28">Password</label>
+            <input type="password" @bind="@reqDataUser.password" id="form2Example28" class="form-control form-control-lg" />
+        </div>
+        <div class="pt-1 mb-4">
+            <button class="btn btn-info btn-lg btn-block" @onclick="RegisterAsync" type="button">Register</button>
+        </div>
+    </form>
+</div>
+@if (error != null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+@if (success != null)
+{
+    <div class="alert alert-success">@success</div>
+}
+@code {
+    @inject NavigationManager Navigation
+    @inject UserService UserService
+    ReqDataUser reqDataUser = new ReqDataUser();
+    List<UserResponce> users;
+    string error;
+    string success;
+
+    [Inject] private ApiRequestService ApiRequest { get; set; }
+    async Task RegisterAsync()
+    {
+        if(users.FirstOrDefault(x=>x.email==reqDataUser.email)!=null){
+            error = "такая почта уже существует";
+            return;
+        }
+        await ApiRequest.RegisterUser(reqDataUser);
+        success = $"Вы успешно зарегистрировались в систему";
+        StateHasChanged();
+        var login = await ApiRequest.Login(reqDataUser.login, reqDataUser.password);
+        UserService.SetUser(login);
+        await Task.Delay(700);
+        Navigation.NavigateTo($"/user/{login.userId}");
+    }
+    private async Task getAllUsers()
+    {
+        var userData = await ApiRequest.GetAllUsersAsync();
+        users = userData?.data?.users ?? new List<UserResponce>();
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await getAllUsers();
+    }
+
+}

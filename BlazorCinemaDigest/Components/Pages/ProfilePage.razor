@@ -1,0 +1,69 @@
+﻿@page "/user/{id:int}"
+@rendermode InteractiveServer
+@using BlazorCinemaDigest.ApiRequest
+@using BlazorCinemaDigest.ApiRequest.Model
+@using BlazorCinemaDigest.ApiRequest.Services
+@using static BlazorCinemaDigest.ApiRequest.Services.UserService
+@inject NavigationManager Navigation
+@inject UserService UserService
+
+<h3>ProfilePage</h3>
+
+@if(@User==null){
+	<p>Загрузка данных</p>
+}
+else {
+<div class="profile">
+	<p class="profile_title">Ваш Профиль</p>
+	<div class="profile_inner">
+		<div class="profile_info">
+			<div class="profile_left">
+				<img src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava3.webp" alt="" />
+				<p class="profile_name">@User.name</p>
+				<p class="profile_address">г.Казань, Бари Галеева 3А</p>
+			</div>
+			<div class="profile_right">
+				<div class="right_line">
+					<p class="line_title">Полное Имя</p>
+					<p class="line_subtitle">@User.name</p>
+				</div>
+				<div class="right_line">
+					<div class="line_title">Email</div>
+					<div class="line_subtitle">@User.email</div>
+				</div>
+				<div class="right_line">
+					<div class="line_title">Телефон</div>
+					<div class="line_subtitle">89083390320</div>
+				</div>
+				<div class="right_line">
+					<div class="line_title">Адрес</div>
+					<div class="line_subtitle">г.Казань, Бари Галеева 3А</div>
+				</div>
+					<button class="btn btn-danger" @onclick="()=>LogOut()" aria-hidden="true">Logout</button>
+
+			</div>
+		</div>
+	</div>
+</div>
+}
+
+@code {
+	[Parameter]
+	public int id { get; set; }
+	private UserResponce User;
+	[Inject] private ApiRequestService ApiRequest { get; set; }
+	protected override async Task OnInitializedAsync()
+	{
+		await getUser(id);
+	}
+	private async Task getUser(int id)
+	{
+		User = await ApiRequest.GetUserByIdAsync(id);
+
+	}
+	void LogOut()
+	{
+		UserService.UnsetUser(UserService.CurrentUser);
+		Navigation.NavigateTo("/");
+	}
+}
