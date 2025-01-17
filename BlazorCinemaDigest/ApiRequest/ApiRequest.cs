@@ -130,5 +130,34 @@ namespace BlazorCinemaDigest.ApiRequest
                 return new UserAddData();
             }
         }
+        public async Task EditUserAsync(int id,ReqDataUser user)
+        {
+            try
+            {
+                var content = new StringContent(
+                    JsonSerializer.Serialize(user),
+                    Encoding.UTF8,
+                    "application/json");
+
+                var response = await _httpClient.PostAsync($"api/Users/update/{id}", content);
+                response.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при запросе: {ex.Message}");
+            }
+        }
+        public async Task DeleteUser(int id)
+        {
+            try
+            {
+                var response = await _httpClient.DeleteAsync($"api/Users/delete/{id}");
+                response.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при запросе: {ex.Message}");
+            }
+        }
     }
 }

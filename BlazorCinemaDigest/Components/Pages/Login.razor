@@ -5,6 +5,31 @@
 @using BlazorCinemaDigest.ApiRequest.Services
 @inject NavigationManager Navigation
 
+@code {
+
+	@inject UserService UserService
+	LoginRequest loginRequest = new LoginRequest();
+	[Inject] private ApiRequestService ApiRequest { get; set; }
+	string error;
+	string success;
+	async void LoginAsync()
+	{
+
+		var login = await ApiRequest.Login(loginRequest.login, loginRequest.password);
+		await Task.Yield();
+		if (login.userId == 0 || login.role == null)
+		{
+			error = "invalid, try again";
+			return;
+		}
+		success = $"Вы успешно вошли в систему";
+		StateHasChanged();
+		UserService.SetUser(login);
+		await Task.Delay(700);
+		Navigation.NavigateTo($"/user/{login.userId}");
+
+	}
+}
 
 <h3>Login</h3>
 <div class="d-flex align-items-center h-custom-2 px-5 ms-xl-4 mt-5 pt-5 pt-xl-0 mt-xl-n5">
@@ -32,29 +57,4 @@
 @if (success != null)
 {
 	<div class="alert alert-success">@success</div>
-}
-@code {
-
-	@inject UserService UserService
-	LoginRequest loginRequest = new LoginRequest();
-	[Inject] private ApiRequestService ApiRequest { get; set; }
-	string error;
-	string success;
-	async void LoginAsync()
-	{
-
-		var login = await ApiRequest.Login(loginRequest.login, loginRequest.password);
-		await Task.Yield();
-		if (login.userId == 0||login.role==null)
-		{
-			error = "invalid, try again";
-			return;
-		}
-		success = $"Вы успешно вошли в систему";
-		StateHasChanged();
-		UserService.SetUser(login);
-		await Task.Delay(700);
-		Navigation.NavigateTo($"/user/{login.userId}");
-
-	}
 }

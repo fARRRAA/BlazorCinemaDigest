@@ -4,7 +4,43 @@
 @using BlazorCinemaDigest.ApiRequest.Model
 @using BlazorCinemaDigest.ApiRequest.Services
 
+@code {
+    @inject NavigationManager Navigation
+    @inject UserService UserService
+    ReqDataUser reqDataUser = new ReqDataUser();
+    List<UserResponce> users;
+    string error;
+    string success;
 
+    [Inject] private ApiRequestService ApiRequest { get; set; }
+    async Task RegisterAsync()
+    {
+        if (users.FirstOrDefault(x => x.email == reqDataUser.email) != null)
+        {
+            error = "такая почта уже существует";
+            return;
+        }
+        await ApiRequest.RegisterUser(reqDataUser);
+        success = $"Вы успешно зарегистрировались в систему";
+        StateHasChanged();
+        var login = await ApiRequest.Login(reqDataUser.login, reqDataUser.password);
+        UserService.SetUser(login);
+        await Task.Delay(700);
+        Navigation.NavigateTo($"/user/{login.userId}");
+    }
+    private async Task getAllUsers()
+    {
+        var userData = await ApiRequest.GetAllUsersAsync();
+        users = userData?.data?.users ?? new List<UserResponce>();
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await getAllUsers();
+    }
+
+}
 <h3>Register</h3>
 <div class="d-flex align-items-center h-custom-2 px-5 ms-xl-4 mt-5 pt-5 pt-xl-0 mt-xl-n5">
     <form style="width: 23rem;">
@@ -41,39 +77,4 @@
 {
     <div class="alert alert-success">@success</div>
 }
-@code {
-    @inject NavigationManager Navigation
-    @inject UserService UserService
-    ReqDataUser reqDataUser = new ReqDataUser();
-    List<UserResponce> users;
-    string error;
-    string success;
 
-    [Inject] private ApiRequestService ApiRequest { get; set; }
-    async Task RegisterAsync()
-    {
-        if(users.FirstOrDefault(x=>x.email==reqDataUser.email)!=null){
-            error = "такая почта уже существует";
-            return;
-        }
-        await ApiRequest.RegisterUser(reqDataUser);
-        success = $"Вы успешно зарегистрировались в систему";
-        StateHasChanged();
-        var login = await ApiRequest.Login(reqDataUser.login, reqDataUser.password);
-        UserService.SetUser(login);
-        await Task.Delay(700);
-        Navigation.NavigateTo($"/user/{login.userId}");
-    }
-    private async Task getAllUsers()
-    {
-        var userData = await ApiRequest.GetAllUsersAsync();
-        users = userData?.data?.users ?? new List<UserResponce>();
-        StateHasChanged();
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        await getAllUsers();
-    }
-
-}
