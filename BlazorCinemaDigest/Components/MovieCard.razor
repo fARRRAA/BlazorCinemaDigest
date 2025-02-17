@@ -1,0 +1,25 @@
+﻿@using BlazorCinemaDigest.ApiRequest.Model
+
+@rendermode InteractiveServer
+
+@code {
+	[Parameter] public Movie movie { get; set; }
+}
+<NavLink href="@($"movie/{movie.id}")">
+	<div class="movie_card shadow-lg" style="    width: 300px;
+    min-height: 420px;">
+		<img src="@movie.image" style="object-fit:cover;" height="380" width="250" alt="Movie Image">
+		<div class="card-body">
+			<h5 class="card-title" style="max-width:300px">@movie.name</h5>
+			<div class="mb-3">
+				<span class="">Жанр:</span>
+				<span class="">@movie.Genre.name</span>
+			</div>
+			<div class="d-flex justify-content-between align-items-center">
+				<span class="rating">★ @movie.rating</span>
+				<span class="text-muted">@movie.duration.Hours ч @movie.duration.Minutes мин</span>
+			</div>
+			<small class="text-muted">Год выхода: @movie.releaseYear</small>
+		</div>
+	</div>
+</NavLink>

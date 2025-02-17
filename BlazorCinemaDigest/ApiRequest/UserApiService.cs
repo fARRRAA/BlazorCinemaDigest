@@ -6,12 +6,12 @@ using BlazorCinemaDigest.Components.Pages;
 
 namespace BlazorCinemaDigest.ApiRequest
 {
-    public class ApiRequestService
+    public class UserApiService
     {
         private readonly HttpClient _httpClient;
-        private readonly ILogger<ApiRequestService> _logger;
+        private readonly ILogger<UserApiService> _logger;
 
-        public ApiRequestService(HttpClient httpClient, ILogger<ApiRequestService> logger)
+        public UserApiService(HttpClient httpClient, ILogger<UserApiService> logger)
         {
             _httpClient = httpClient;
             _logger = logger;

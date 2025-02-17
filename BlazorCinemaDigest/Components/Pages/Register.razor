@@ -12,7 +12,7 @@
     string error;
     string success;
 
-    [Inject] private ApiRequestService ApiRequest { get; set; }
+    [Inject] private UserApiService ApiRequest { get; set; }
     async Task RegisterAsync()
     {
         if (users.FirstOrDefault(x => x.email == reqDataUser.email) != null)

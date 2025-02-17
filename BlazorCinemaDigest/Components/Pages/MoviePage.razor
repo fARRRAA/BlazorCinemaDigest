@@ -1,0 +1,143 @@
+﻿@page "/movie/{idParam}"
+@using BlazorCinemaDigest.ApiRequest.Model
+@using BlazorCinemaDigest.ApiRequest
+@inject MovieApiService MovieApi
+
+@code {
+	[Parameter]
+	public string idParam { get; set; } // Изменяем тип на string
+
+	private int id;
+	private Movie movie;
+
+	protected override async Task OnParametersSetAsync()
+	{
+		if (int.TryParse(idParam, out id) && id > 0)
+		{
+			movie = await MovieApi.GetMovieById(id);
+		}
+		else
+		{
+			movie = null;
+		}
+	}
+}
+
+@if (movie != null)
+{
+	<div class="movie-page-container">
+		<div class="movie-header" style="background-image: url('@movie.image'); object-fit:cover;">
+			<div class="overlay"></div>
+			<div class="movie-info">
+				<h1 class="movie-title">@movie.name</h1>
+				<p class="movie-rating">★ @movie.rating</p>
+			</div>
+		</div>
+		<div class="movie-content">
+			<div class="movie-details">
+				<img src="@movie.image" alt="@movie.name" class="movie-poster" />
+				<div class="movie-info-block">
+					<p><strong>Название:</strong> @movie.name</p>
+					<p><strong>Жанр:</strong> @movie.Genre.name</p>
+					<p><strong>Год выхода:</strong> @movie.releaseYear</p>
+					<p><strong>Продолжительность:</strong> @movie.duration.Hours ч @movie.duration.Minutes мин</p>
+				</div>
+			</div>
+			<div class="movie-description">
+				<h2>Описание</h2>
+				<p>@movie.description</p>
+			</div>
+		</div>
+	</div>
+}
+else
+{
+	<div class="alert alert-warning">Фильм не найден</div>
+}
+<style>
+	/* Стили для страницы фильма */
+	.movie-page-container {
+		font-family: Arial, sans-serif;
+		color: #333;
+		background-color: #f8f9fa;
+		padding: 20px;
+	}
+
+	.movie-header {
+		position: relative;
+		height: 400px;
+		background-size: cover;
+		background-position: center;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: white;
+		text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+	}
+
+	.overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		/* background: rgba(13, 110, 253, 0.5); /* Полупрозрачный синий фон */ */
+	}
+
+	.movie-info {
+		position: relative;
+		z-index: 1;
+		text-align: center;
+	}
+
+	.movie-title {
+		font-size: 3rem;
+		margin: 0;
+	}
+
+	.movie-rating {
+		font-size: 2rem;
+		color: gold;
+	}
+
+	.movie-content {
+		margin-top: 20px;
+		padding: 20px;
+		background: white;
+		border-radius: 10px;
+		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	}
+
+	.movie-details {
+		display: flex;
+		align-items: center;
+		gap: 20px;
+	}
+
+	.movie-poster {
+		width: 200px;
+		height: 300px;
+		object-fit: cover;
+		border-radius: 10px;
+		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	}
+
+	.movie-info-block p {
+		margin: 5px 0;
+		font-size: 1.1rem;
+	}
+
+	.movie-description {
+		margin-top: 20px;
+	}
+
+		.movie-description h2 {
+			font-size: 2rem;
+			margin-bottom: 10px;
+		}
+
+		.movie-description p {
+			font-size: 1.1rem;
+			line-height: 1.6;
+		}
+</style>

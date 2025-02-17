@@ -264,3 +264,59 @@
     gap: 30px;
     padding-right: 15px;
 }
+.movies_wrapper {
+    display: flex;
+    flex-wrap:wrap;
+    gap: 30px;
+}
+.movie_card {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 300px;
+    min-height: 420px;
+}
+.movie_card-img {
+    width: 250px;
+    height: 200px;
+    object-fit: cover;
+}
+.movie_card-title {
+    font-size:16px;
+    max-width:250px;
+}
+.movie_card-desc {
+    max-width: 250px;
+}
+.movie_card-genre {
+    display:flex;
+    justify-content:space-between;
+}
+.search-filter-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.search-form input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 250px;
+}
+
+.search-form button {
+    padding: 8px 12px;
+    margin-left: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.genre-dropdown select {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}

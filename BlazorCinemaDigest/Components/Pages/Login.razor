@@ -9,7 +9,7 @@
 
 	@inject UserService UserService
 	LoginRequest loginRequest = new LoginRequest();
-	[Inject] private ApiRequestService ApiRequest { get; set; }
+	[Inject] private UserApiService ApiRequest { get; set; }
 	string error;
 	string success;
 	async void LoginAsync()

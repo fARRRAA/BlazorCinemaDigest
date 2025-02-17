@@ -51,7 +51,7 @@ else {
 	[Parameter]
 	public int id { get; set; }
 	private UserResponce User;
-	[Inject] private ApiRequestService ApiRequest { get; set; }
+	[Inject] private UserApiService ApiRequest { get; set; }
 	protected override async Task OnInitializedAsync()
 	{
 		await getUser(id);

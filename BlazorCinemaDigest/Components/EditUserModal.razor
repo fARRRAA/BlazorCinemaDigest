@@ -10,7 +10,7 @@
 	// [Parameter] public int userId { get; set; }
 	[Parameter] public UserResponce user { get; set; }
 	public UserResponce userOld = new UserResponce();
-	[Inject] private ApiRequestService ApiRequest { get; set; }
+	[Inject] private UserApiService ApiRequest { get; set; }
 	private List<UserResponce> users;
 	private bool isModalVisible = false;
 	string error;
