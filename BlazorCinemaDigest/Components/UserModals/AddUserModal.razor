@@ -1,0 +1,115 @@
+﻿@rendermode InteractiveServer
+@using BlazorCinemaDigest.ApiRequest
+@using BlazorCinemaDigest.ApiRequest.Model
+
+@code {
+	[Parameter] public bool IsVisible { get; set; }
+	[Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+	[Parameter]  public List<UserResponce> parentUsers { get; set; }
+	[Inject] private UserApiService ApiRequest { get; set; }
+	private List<UserResponce> users;
+	private bool isModalVisible = false;
+	string error;
+	string success;
+	private ReqDataUser reqDataUser = new ReqDataUser();
+
+
+	private async void CloseModal()
+	{
+		var userData = await ApiRequest.GetAllUsersAsync();
+		parentUsers = userData?.data?.users?.ToList() ?? parentUsers; // Создаем новый экземпляр списка
+		IsVisible = false;
+		IsVisibleChanged.InvokeAsync(IsVisible);
+		StateHasChanged(); // Обновляем UI
+	}
+	protected override async Task OnInitializedAsync()
+	{
+		await getAllUsers();
+
+	}
+	private async Task getAllUsers()
+	{
+		var userData = await ApiRequest.GetAllUsersAsync();
+		users = userData?.data?.users?.ToList() ?? new List<UserResponce>(); // Создаем новый экземпляр списка
+		StateHasChanged(); // Обязательно вызываем StateHasChanged()
+	}
+	private async void AddNewUser()
+	{
+		if (users.Any(x => x.email == reqDataUser.email))
+		{
+			error = "такая почта уже есть";
+			StateHasChanged();
+			await Task.Delay(1000);
+			error = null;
+			StateHasChanged();
+
+			return;
+		}
+		var reqAddUserData = await ApiRequest.AddNewUser(reqDataUser);
+
+		if (!reqAddUserData.status) return;
+		await getAllUsers();
+		StateHasChanged();
+		success = "добавление прошло успешно";
+		StateHasChanged();
+		await Task.Delay(1000);
+		success = null;
+		StateHasChanged();
+		CloseModal();
+	}
+	
+}
+
+<div class="modal @(IsVisible ? "show" : "")" tabindex="-1" role="dialog" style="@(IsVisible ? "display: block;" : "display: none;")">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5>Добавить пользователя</h5>
+
+				<button type="button" class="close" @onclick="CloseModal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<div class="d-flex align-items-center h-custom-2 px-5 ms-xl-4 mt-5 pt-5 pt-xl-0 mt-xl-n5">
+					<form style="width: 23rem;">
+						<div class="form-outline mb-4">
+							<label class="form-label" for="form2Example28">Имя</label>
+							<input type="text" @bind="@reqDataUser.name" id="form2Example28" class="form-control form-control-lg" />
+						</div>
+						<div class="form-outline mb-4">
+							<label class="form-label" for="form2Example28">Почта</label>
+							<input type="text" @bind="@reqDataUser.email" id="form2Example28" class="form-control form-control-lg" />
+						</div>
+						<div class="form-outline mb-4">
+							<label class="form-label" for="form2Example28">Описание</label>
+							<input type="text" @bind="@reqDataUser.description" id="form2Example28" class="form-control form-control-lg" />
+						</div>
+						<div class="form-outline mb-4">
+							<label class="form-label" for="form2Example28">Логин</label>
+							<input type="text" @bind="@reqDataUser.login" id="form2Example28" class="form-control form-control-lg" />
+						</div>
+						<div class="form-outline mb-4">
+							<label class="form-label" for="form2Example28">Пароль</label>
+							<input type="password" @bind="@reqDataUser.password" id="form2Example28" class="form-control form-control-lg" />
+						</div>
+						<div class="pt-1 mb-4">
+							<button class="btn btn-info btn-lg btn-block" @onclick="AddNewUser" type="button">Добавить</button>
+						</div>
+					</form>
+					@if (error != null)
+					{
+						<div class="alert alert-danger">@error</div>
+					}
+					@if (success != null)
+					{
+						<div class="alert alert-success">@success</div>
+					}
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" @onclick="CloseModal">Закрыть</button>
+			</div>
+		</div>
+	</div>
+</div>

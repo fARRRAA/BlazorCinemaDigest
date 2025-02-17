@@ -19,28 +19,7 @@
 
 	<main>
 		<div class="nav-item px-3 d-flex gap-4 align-items-center" d-flex gap-4>
-			<NavLink class="nav-link" href="/login">
-				<span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Login
-			</NavLink>
-			@if (@UserService.IsAuthenticated)
-			{
-				<div class="d-flex gap-2">
-					<p class="fs-6 text-primary mt-3">User: </p>
-					<p class="fs-7 mt-3">@UserService.CurrentUser.userId</p>
-				</div>
-			}
-			@if (@UserService.IsAuthenticated&&@UserService.CurrentUser.role == "admin")
-			{
-				<NavLink class="nav-link" href="/admin">
-					<span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Admin
-				</NavLink>
-			}
-			@if (@UserService.IsAuthenticated)
-			{
-				<NavLink class="nav-link" href="@($"/user/{UserService.CurrentUser.userId}")">
-					<span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Profile
-				</NavLink>
-			}
+
 		</div>
 		<article class="px-4">
 			@Body

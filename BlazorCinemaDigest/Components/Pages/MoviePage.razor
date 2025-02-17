@@ -5,7 +5,7 @@
 
 @code {
 	[Parameter]
-	public string idParam { get; set; } // Изменяем тип на string
+	public string idParam { get; set; } 
 
 	private int id;
 	private Movie movie;
@@ -26,11 +26,13 @@
 @if (movie != null)
 {
 	<div class="movie-page-container">
-		<div class="movie-header" style="background-image: url('@movie.image'); object-fit:cover;">
+		<div class="movie-header" style="background-image: url('@movie.image');">
 			<div class="overlay"></div>
 			<div class="movie-info">
 				<h1 class="movie-title">@movie.name</h1>
 				<p class="movie-rating">★ @movie.rating</p>
+				<button class="watch-button">Смотреть сейчас</button>
+
 			</div>
 		</div>
 		<div class="movie-content">
@@ -65,14 +67,14 @@ else
 
 	.movie-header {
 		position: relative;
-		height: 400px;
+		height: 500px;
 		background-size: cover;
 		background-position: center;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: white;
-		text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+		color: #fff;
+		text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
 	}
 
 	.overlay {
@@ -81,7 +83,7 @@ else
 		left: 0;
 		width: 100%;
 		height: 100%;
-		/* background: rgba(13, 110, 253, 0.5); /* Полупрозрачный синий фон */ */
+		background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.9));
 	}
 
 	.movie-info {
@@ -106,11 +108,27 @@ else
 		background: white;
 		border-radius: 10px;
 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
 	}
+
+	.watch-button {
+		padding: 15px 30px;
+		background: #0d6efd;
+		color: #fff;
+		border: none;
+		border-radius: 5px;
+		font-size: 1.2rem;
+		cursor: pointer;
+		transition: transform 0.3s ease, box-shadow 0.3s ease;
+	}
+
+		.watch-button:hover {
+			transform: scale(1.1);
+			box-shadow: 0 10px 20px rgba(13, 110, 253, 0.5);
+		}
 
 	.movie-details {
 		display: flex;
-		align-items: center;
 		gap: 20px;
 	}
 

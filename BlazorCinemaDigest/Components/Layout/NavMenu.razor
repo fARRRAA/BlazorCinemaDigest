@@ -1,4 +1,16 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@inject NavigationManager Navigation
+@using BlazorCinemaDigest.ApiRequest.Services
+
+@code {
+    @inject UserService UserService
+    void LogOut()
+    {
+        UserService.UnsetUser(UserService.CurrentUser);
+        Navigation.NavigateTo("/");
+    }
+}
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <NavLink class="navbar-brand" href="/">Cinema Digest</NavLink>
     </div>
@@ -10,8 +22,24 @@
     <nav class="flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Главная
             </NavLink>
+			<NavLink class="nav-link" href="/login">
+				<span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Войти
+			</NavLink>
+
+			@if (@UserService.IsAuthenticated && @UserService.CurrentUser.role == "admin")
+			{
+				<NavLink class="nav-link" href="/admin">
+					<span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Админ-Панель
+				</NavLink>
+			}
+			@if (@UserService.IsAuthenticated)
+			{
+				<NavLink class="nav-link" href="@($"/user/{UserService.CurrentUser.userId}")">
+					<span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Профиль
+				</NavLink>
+			}
         </div>
     </nav>
 </div>

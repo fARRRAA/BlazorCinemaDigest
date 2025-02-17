@@ -12,6 +12,11 @@
 	[Inject] private UserApiService ApiRequest { get; set; }
 	string error;
 	string success;
+	protected override async Task OnInitializedAsync()
+	{
+		loginRequest.login = "admin";
+		loginRequest.password = "admin";
+	}
 	async void LoginAsync()
 	{
 
