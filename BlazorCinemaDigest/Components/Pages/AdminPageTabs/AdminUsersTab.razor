@@ -1,0 +1,131 @@
+﻿@page "/admin/users"
+@rendermode InteractiveServer
+@using BlazorCinemaDigest.ApiRequest
+@using BlazorCinemaDigest.ApiRequest.Model
+@using BlazorCinemaDigest.Components.UserModals
+
+
+@code {
+	private List<UserResponce> users;
+	private ReqDataUser reqDataUser = new ReqDataUser();
+	private bool isEditUserModalVisible = false;
+	private bool isAddUserModalVisible = false;
+	private UserResponce user = new UserResponce();
+	string error;
+	string success;
+	private void OpenEditUserModal(UserResponce userUpdate)
+	{
+		isEditUserModalVisible = true;
+		user = userUpdate;
+	}
+	private void OpenAddUserModal()
+	{
+		isAddUserModalVisible = true;
+	}
+	[Inject] private UserApiService ApiRequest { get; set; }
+
+	protected override async Task OnInitializedAsync()
+	{
+		await getAllUsers();
+	}
+
+	private async Task getAllUsers()
+	{
+		var userData = await ApiRequest.GetAllUsersAsync();
+		users = userData?.data?.users ?? new List<UserResponce>();
+
+		StateHasChanged();
+	}
+
+	private void HandleUsersUpdated(List<UserResponce> updatedUsers)
+	{
+		users = updatedUsers;
+	}
+
+	async Task DeleteUser(int id)
+	{
+		await ApiRequest.DeleteUser(id);
+		await getAllUsers();
+		StateHasChanged();
+		success = "удаление прошло успешно";
+		await Task.Delay(1000);
+		success = null;
+
+	}
+}
+<div class="admin_users-tab" style="margin-top:30px;">
+	<h4>Список пользователей</h4>
+	@if (error != null)
+	{
+		<div class="alert alert-danger">@error</div>
+	}
+	@if (success != null)
+	{
+		<div class="alert alert-success">@success</div>
+	}
+
+	<p class="text-center fw-bold mb-5 mx-1 mx-md-4 mt-4">
+		<table class="table table-bordered">
+			<thead class="alert-dark">
+				<tr>
+					<th>id</th>
+					<th>Name</th>
+					<th>Email</th>
+					<th>Login</th>
+					<th>Desc</th>
+					<th>Edit</th>
+					<th>Delete</th>
+				</tr>
+			</thead>
+			<tbody>
+				@if (users == null)
+				{
+					<tr>
+						<td colspan="3" class="text-center">Loading...</td>
+					</tr>
+				}
+				else if (!users.Any())
+				{
+					<tr>
+						<td colspan="3" class="text-center">No users found</td>
+					</tr>
+				}
+				else
+				{
+					@foreach (var user in users)
+					{
+						<tr>
+							<td>@user.id</td>
+							<td>@user.name</td>
+							<td>@user.email</td>
+							<td>@user.login</td>
+							<td>@user.description</td>
+							<td>
+								<button class="edit_btn" @onclick="()=> OpenEditUserModal(user)">
+									<svg width="19" height="19" viewBox="0 0 22 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+										<path d="M10 1.99632H3C2.46957 1.99632 1.96086 2.20704 1.58579 2.58211C1.21071 2.95718 1 3.46589 1 3.99632V17.9963C1 18.5268 1.21071 19.0355 1.58579 19.4105C1.96086 19.7856 2.46957 19.9963 3 19.9963H17C17.5304 19.9963 18.0391 19.7856 18.4142 19.4105C18.7893 19.0355 19 18.5268 19 17.9963V10.9963" stroke="black" stroke-linecap="round" stroke-linejoin="round" />
+										<path d="M16.375 1.62132C16.7728 1.2235 17.3124 1 17.875 1C18.4376 1 18.9772 1.2235 19.375 1.62132C19.7728 2.01914 19.9963 2.55871 19.9963 3.12132C19.9963 3.68393 19.7728 4.2235 19.375 4.62132L10.362 13.6353C10.1245 13.8726 9.83121 14.0462 9.509 14.1403L6.636 14.9803C6.54995 15.0054 6.45874 15.0069 6.37191 14.9847C6.28508 14.9624 6.20583 14.9173 6.14245 14.8539C6.07907 14.7905 6.03389 14.7112 6.01164 14.6244C5.9894 14.5376 5.9909 14.4464 6.016 14.3603L6.856 11.4873C6.95053 11.1654 7.12453 10.8724 7.362 10.6353L16.375 1.62132Z" stroke="black" stroke-linecap="round" stroke-linejoin="round" />
+									</svg>
+								</button>
+							</td>
+							<td>
+								<button class="delete_btn" @onclick="async()=>await DeleteUser(user.id)">
+									<svg width="19" height="19" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+										<path d="M3.55029 19C2.94229 19 2.42476 18.8104 1.99771 18.4313C1.57067 18.0522 1.35714 17.5932 1.35714 17.0542V2.13253H0V0.927711H5.42857V0H13.5714V0.927711H19V2.13253H17.6429V17.0542C17.6429 17.6084 17.4339 18.0715 17.0159 18.4434C16.5979 18.8153 16.0758 19.0008 15.4497 19H3.55029ZM16.2857 2.13253H2.71429V17.0542C2.71429 17.2703 2.79255 17.4478 2.94907 17.5867C3.10559 17.7257 3.306 17.7952 3.55029 17.7952H15.4511C15.6592 17.7952 15.8505 17.7181 16.0251 17.5639C16.1998 17.4096 16.2866 17.2394 16.2857 17.053V2.13253ZM6.52514 15.3855H7.88228V4.54217H6.52514V15.3855ZM11.1177 15.3855H12.4749V4.54217H11.1177V15.3855Z" fill="black" />
+									</svg>
+								</button>
+							</td>
+						</tr>
+					}
+				}
+			</tbody>
+		</table>
+	</p>
+	<div class="pt-1 mb-4">
+		<button class="btn btn-info btn-lg btn-block" @onclick="()=>OpenAddUserModal()" type="button">Добавить пользователя</button>
+	</div>
+
+
+	<EditUserModal IsVisible="@isEditUserModalVisible" user="user" parentUsers="users" IsVisibleChanged="@((value) => isEditUserModalVisible = value)" />
+	<AddUserModal IsVisible="@isAddUserModalVisible" IsVisibleChanged="@((value) => isAddUserModalVisible = value)" parentUsers="users" OnUsersUpdated="HandleUsersUpdated" />
+</div>

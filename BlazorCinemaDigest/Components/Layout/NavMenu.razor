@@ -27,19 +27,18 @@
 			<NavLink class="nav-link" href="/login">
 				<span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Войти
 			</NavLink>
-
-			@if (@UserService.IsAuthenticated && @UserService.CurrentUser.role == "admin")
-			{
-				<NavLink class="nav-link" href="/admin">
-					<span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Админ-Панель
-				</NavLink>
-			}
 			@if (@UserService.IsAuthenticated)
 			{
 				<NavLink class="nav-link" href="@($"/user/{UserService.CurrentUser.userId}")">
 					<span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Профиль
 				</NavLink>
 			}
+            @if (@UserService.IsAuthenticated && @UserService.CurrentUser.role == "admin")
+            {
+                <NavLink class="nav-link" href="/admin">
+                    <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Админ-Панель
+                </NavLink>
+            }
         </div>
     </nav>
 </div>

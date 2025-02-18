@@ -6,6 +6,10 @@
 	[Parameter] public bool IsVisible { get; set; }
 	[Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
 	[Parameter]  public List<UserResponce> parentUsers { get; set; }
+	[Parameter]
+	public EventCallback<List<UserResponce>> OnUsersUpdated { get; set; }
+
+
 	[Inject] private UserApiService ApiRequest { get; set; }
 	private List<UserResponce> users;
 	private bool isModalVisible = false;
@@ -49,7 +53,8 @@
 
 		if (!reqAddUserData.status) return;
 		await getAllUsers();
-		StateHasChanged();
+		await OnUsersUpdated.InvokeAsync(users);
+
 		success = "добавление прошло успешно";
 		StateHasChanged();
 		await Task.Delay(1000);
