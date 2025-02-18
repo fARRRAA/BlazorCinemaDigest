@@ -20,11 +20,9 @@
 
 	private async void CloseModal()
 	{
-		var userData = await ApiRequest.GetAllUsersAsync();
-		parentUsers = userData?.data?.users?.ToList() ?? parentUsers; // Создаем новый экземпляр списка
 		IsVisible = false;
 		IsVisibleChanged.InvokeAsync(IsVisible);
-		StateHasChanged(); // Обновляем UI
+		StateHasChanged(); 
 	}
 	protected override async Task OnInitializedAsync()
 	{
@@ -34,8 +32,8 @@
 	private async Task getAllUsers()
 	{
 		var userData = await ApiRequest.GetAllUsersAsync();
-		users = userData?.data?.users?.ToList() ?? new List<UserResponce>(); // Создаем новый экземпляр списка
-		StateHasChanged(); // Обязательно вызываем StateHasChanged()
+		users = userData?.data?.users?.ToList() ?? new List<UserResponce>(); 
+		StateHasChanged();
 	}
 	private async void AddNewUser()
 	{

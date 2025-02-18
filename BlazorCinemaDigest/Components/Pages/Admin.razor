@@ -2,8 +2,13 @@
 @rendermode InteractiveServer
 @using BlazorCinemaDigest.ApiRequest
 @using BlazorCinemaDigest.ApiRequest.Model
+@using BlazorCinemaDigest.ApiRequest.Services
 @using BlazorCinemaDigest.Components.Pages.AdminPageTabs
 @using BlazorCinemaDigest.Components.UserModals
+
+@inject UserService UserService;
+@inject NavigationManager Navigation
+
 
 
 @code {
@@ -28,6 +33,9 @@
 	protected override async Task OnInitializedAsync()
 	{
 		await getAllUsers();
+		if(UserService.CurrentUser==null){
+			Navigation.NavigateTo("/");
+		}
 	}
 
 	private async Task getAllUsers()

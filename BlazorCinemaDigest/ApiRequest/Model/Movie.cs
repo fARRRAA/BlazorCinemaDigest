@@ -34,7 +34,6 @@ namespace BlazorCinemaDigest.ApiRequest.Model
     {
 
         public string name { get; set; }
-        [ForeignKey(nameof(Genre))]
         public int genreId { get; set; }
         public Genre Genre { get; set; }
         public string description { get; set; }
@@ -42,8 +41,26 @@ namespace BlazorCinemaDigest.ApiRequest.Model
         public string image { get; set; }
         public TimeSpan duration { get; set; }
         public int releaseYear { get; set; }
+        public string DurationString
+        {
+            get => duration.ToString(@"hh\:mm\:ss"); // Форматирует TimeSpan как строку
+            set
+            {
+                if (TimeSpan.TryParse(value, out var parsedDuration))
+                {
+                    duration = parsedDuration;
+                }
+            }
+        }
     }
-
+    public class MoviePhoto
+    {
+        [Key]
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Url { get; set; }
+        public DateTime UploadedAt { get; set; }
+    }
 
 
 }

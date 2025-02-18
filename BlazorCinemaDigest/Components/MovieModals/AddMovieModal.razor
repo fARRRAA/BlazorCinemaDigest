@@ -1,0 +1,209 @@
+﻿@rendermode InteractiveServer
+@using BlazorCinemaDigest.ApiRequest
+@using BlazorCinemaDigest.ApiRequest.Model
+@using BlazorCinemaDigest.ApiRequest.Services
+@using BlazorCinemaDigest.Components.UserModals
+@using static System.Net.WebRequestMethods
+    @inject UserService UserService
+
+@code {
+	[Parameter] public bool IsVisible { get; set; }
+	[Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+	[Parameter] public List<Movie> parentMovies { get; set; }
+	[Parameter]
+	public EventCallback<List<Movie>> OnMovieUpdated { get; set; }
+	[Inject] GenreApiService GenreApi { get; set; }
+
+	[Inject] private MovieApiService ApiRequest { get; set; }
+	private List<Movie> movies;
+	private List<Genre> genres;
+	private bool isModalVisible = false;
+	string error;
+	string success;
+	private MovieRequest movieToAdd = new MovieRequest();
+	private string selectedGenre = "";
+	private IBrowserFile selectedFile;
+	private HttpClient _httpClient;
+
+	protected override async void OnInitialized()
+	{
+		await GetAllGenres();
+		_httpClient = new HttpClient();
+
+	}
+
+	private async Task GetAllGenres()
+	{
+		var allgenres = await GenreApi.GetAllGenres();
+		genres = allgenres;
+	}
+	private void CloseModal()
+	{
+		IsVisible = false;
+		IsVisibleChanged.InvokeAsync(IsVisible);
+	}
+	private async Task GetAllMovies(int page, int pageSize)
+	{
+		var all = await ApiRequest.GetAllMovies(page, pageSize);
+		movies = all;
+		StateHasChanged();
+
+	}
+	private async void CreateMovie()
+	{
+
+
+		movieToAdd.Genre = genres.FirstOrDefault(x => x.name == selectedGenre);
+		movieToAdd.genreId = movieToAdd.Genre.id;
+		movieToAdd.image = "";
+
+		var url = "https://localhost:7270/api/Photos/photo/customer-support.png";
+
+		if (selectedFile != null)
+		{
+			var content = new MultipartFormDataContent();
+
+			var fileStream = new StreamContent(selectedFile.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024));
+			fileStream.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(selectedFile.ContentType);
+			content.Add(fileStream, "file", selectedFile.Name);
+
+			var requestMessage = new HttpRequestMessage(HttpMethod.Post, "https://localhost:7270/api/Photos/upload")
+				{
+					Content = content
+				};
+			var token = UserService.CurrentUser.token;
+			requestMessage.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+			var response = await _httpClient.SendAsync(requestMessage);
+
+			if (response.IsSuccessStatusCode)
+			{
+				var photo = await response.Content.ReadFromJsonAsync<MoviePhoto>();
+				movieToAdd.image = photo.Url;
+			}
+
+		}
+		bool res = await ApiRequest.AddMovie(movieToAdd);
+		if (res)
+		{
+			await GetAllMovies(1, 10);
+			await OnMovieUpdated.InvokeAsync(movies);
+			success = "добавление прошло успешно";
+			StateHasChanged();
+			await Task.Delay(1000);
+			success = null;
+			StateHasChanged();
+			CloseModal();
+		}
+
+
+	}
+	private async Task HandleFileSelected(InputFileChangeEventArgs e)
+	{
+		selectedFile = e.GetMultipleFiles(1).FirstOrDefault();
+	}
+
+}
+
+<div class="modal @(IsVisible ? "show" : "")" tabindex="-1" role="dialog" style="@(IsVisible ? "display: block;" : "display: none;")">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5>Добавить фильм</h5>
+
+				<button type="button" class="close" @onclick="CloseModal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<EditForm Model="movieToAdd" OnValidSubmit="CreateMovie">
+					<DataAnnotationsValidator />
+					<ValidationSummary />
+					<div class="d-flex flex-column align-items-center h-custom-2 px-5 ms-xl-4 pt-5 pt-xl-0 mt-xl-n5">
+						<div class="form-outline mb-1">
+							<label class="form-label" for="form2Example28">Имя</label>
+							<InputText type="text" @bind-Value="@movieToAdd.name" class="form-control form-control-lg" />
+						</div>
+						<div class="form-outline mb-1">
+							<label class="form-label" for="form2Example28">Описание</label>
+							<InputText type="text" @bind-Value="@movieToAdd.description" class="form-control form-control-lg" />
+						</div>
+						@if (genres != null)
+						{
+							<div class="form-outline mb-1">
+								<label class="form-label" for="form2Example28">Жанр</label>
+								<div class="genre-dropdown">
+									<select @bind="selectedGenre" style="width:277px;height:48px;" @bind:event="onchange">
+										<option value="">Все жанры</option>
+										@foreach (var genre in genres)
+										{
+											<option value="@genre.name">@genre.name</option>
+										}
+									</select>
+								</div>
+							</div>
+						}
+						<div class="form-outline mb-1">
+							<label class="form-label" for="form2Example28">Продолжительность</label>
+							<InputText type="text" @bind-Value="@movieToAdd.DurationString" class="form-control form-control-lg" />
+						</div>
+						<div class="form-outline mb-1">
+							<label class="form-label" for="form2Example28">Рейтинг</label>
+							<InputNumber type="text" @bind-Value="@movieToAdd.rating" class="form-control form-control-lg" />
+						</div>
+						<div class="form-outline mb-1">
+							<label class="form-label" for="form2Example28">Год выхода</label>
+							<InputNumber type="text" @bind-Value="@movieToAdd.releaseYear" class="form-control form-control-lg" />
+						</div>
+						<div class="form-outline mb-1">
+							<label class="form-label" for="form2Example28">Фото</label>
+							<InputFile type="text" OnChange="HandleFileSelected" class="form-control form-control-sm" />
+						</div>
+						<div class="pt-1 mb-4">
+							<button class="btn btn-info btn-lg btn-block" @onclick="CreateMovie" type="button">Добавить</button>
+						</div>
+						@if (error != null)
+						{
+							<div class="alert alert-danger">@error</div>
+						}
+						@if (success != null)
+						{
+							<div class="alert alert-success">@success</div>
+						}
+
+					</div>
+				</EditForm>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" @onclick="CloseModal">Закрыть</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<style>
+	.genre-dropdown {
+		position: relative;
+	}
+
+		.genre-dropdown select {
+			padding: 10px 15px;
+			border: 1px solid #ced4da;
+			border-radius: 5px;
+			font-size: 14px;
+			appearance: none; /* Убираем стандартную стрелку */
+			background: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%230d6efd%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M6%209l6%206 6-6%22%2F%3E%3C%2Fsvg%3E') no-repeat right 10px center / 12px 12px;
+			width: 200px;
+			transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+		}
+
+			.genre-dropdown select:focus {
+				border-color: #0d6efd;
+				box-shadow: 0 0 5px rgba(13, 110, 253, 0.25);
+				outline: none;
+			}
+		/* Подсказка для пустого значения */
+		.genre-dropdown option:first-child {
+			color: #6c757d; /* Серый цвет для подсказки */
+		}
+</style>

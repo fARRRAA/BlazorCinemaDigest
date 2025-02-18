@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @using BlazorCinemaDigest.ApiRequest
 @using BlazorCinemaDigest.ApiRequest.Model
+@using BlazorCinemaDigest.Components.MovieModals
 @using BlazorCinemaDigest.Components.UserModals
 
 @code {
@@ -13,31 +14,33 @@
 	private bool isEditMovieModalVisible = false;
 	private bool isAddMovieModalVisible = false;
 	private Movie movieToUpdate = new Movie();
+	string error;
+	string success;
+
 	protected override async Task OnInitializedAsync()
 	{
-		await GetAllMovies();
+		await GetAllMovies(1, pageSize);
 	}
-	private async Task GetAllMovies(){
-		var all = await ApiRequest.GetAllMovies(page,pageSize);
+	private async Task GetAllMovies(int page, int pageSize)
+	{
+		var all = await ApiRequest.GetAllMovies(page, pageSize);
 		movies = all;
 		StateHasChanged();
 
 	}
-	string error;
-	string success;
 	private void OpenEditMovieModal(Movie movie)
 	{
 		isEditMovieModalVisible = true;
 		movieToUpdate = movie;
 	}
-	private void OpenAddUserModal()
+	private void OpenAddMovieModal()
 	{
 		isAddMovieModalVisible = true;
 	}
 	async Task DeleteMovie(int id)
 	{
 		// await ApiRequest.Delet(id);
-		await GetAllMovies();
+		await GetAllMovies(1, pageSize);
 		StateHasChanged();
 		success = "удаление прошло успешно";
 		await Task.Delay(1000);
@@ -46,7 +49,12 @@
 		StateHasChanged();
 
 	}
+	private void HandleMovieUpdated(List<Movie> newMovies)
+	{
+		movies = newMovies;
+	}
 }
+
 <div class="admin_users-tab" style="margin-top:30px;">
 	<h4>Список фильмов</h4>
 	@if (error != null)
@@ -92,7 +100,7 @@
 					{
 						<tr>
 							<td>
-								<img src="@movie.image" width="50px" height="50px"/>
+								<img src="@movie.image" width="50px" height="50px" />
 							</td>
 							<td>@movie.id</td>
 							<td>@movie.name</td>
@@ -122,10 +130,10 @@
 		</table>
 	</p>
 	<div class="pt-1 mb-4">
-		<button class="btn btn-info btn-lg btn-block" @onclick="()=>OpenAddUserModal()" type="button">Добавить фильм</button>
+		<button class="btn btn-info btn-lg btn-block" @onclick="()=>OpenAddMovieModal()" type="button">Добавить фильм</button>
 	</div>
 
 
 	@* <EditUserModal IsVisible="@isEditUserModalVisible" user="user" parentUsers="users" IsVisibleChanged="@((value) => isEditUserModalVisible = value)" /> *@
-	@* <AddUserModal IsVisible="@isAddUserModalVisible" IsVisibleChanged="@((value) => isAddUserModalVisible = value)" parentUsers="users" OnUsersUpdated="HandleUsersUpdated" /> *@
+	<AddMovieModal IsVisible="@isAddMovieModalVisible" IsVisibleChanged="@((value) => isAddMovieModalVisible = value)" parentMovies="movies" OnMovieUpdated="HandleMovieUpdated" />
 </div>
