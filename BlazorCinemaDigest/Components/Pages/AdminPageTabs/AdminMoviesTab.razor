@@ -13,7 +13,7 @@
 	private int pageSize = 10;
 	private bool isEditMovieModalVisible = false;
 	private bool isAddMovieModalVisible = false;
-	private Movie movieToUpdate = new Movie();
+	private Movie movieToEdit = new Movie();
 	string error;
 	string success;
 
@@ -31,7 +31,7 @@
 	private void OpenEditMovieModal(Movie movie)
 	{
 		isEditMovieModalVisible = true;
-		movieToUpdate = movie;
+		movieToEdit = movie;
 	}
 	private void OpenAddMovieModal()
 	{
@@ -134,6 +134,6 @@
 	</div>
 
 
-	@* <EditUserModal IsVisible="@isEditUserModalVisible" user="user" parentUsers="users" IsVisibleChanged="@((value) => isEditUserModalVisible = value)" /> *@
+	<EditMovieModal IsVisible="@isEditMovieModalVisible" movieToEdit="movieToEdit" parentMovies="movies" OnMovieUpdated="HandleMovieUpdated" IsVisibleChanged="@((value) => isEditMovieModalVisible = value)" />
 	<AddMovieModal IsVisible="@isAddMovieModalVisible" IsVisibleChanged="@((value) => isAddMovieModalVisible = value)" parentMovies="movies" OnMovieUpdated="HandleMovieUpdated" />
 </div>

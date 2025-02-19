@@ -33,6 +33,24 @@ namespace BlazorCinemaDigest.ApiRequest
                 return new List<Movie>();
             }
         }
+        public async Task<List<Movie>> All()
+        {
+            var url = "api/Movie/all";
+
+            try
+            {
+                var responce = await _httpClient.GetAsync(url);
+                responce.EnsureSuccessStatusCode();
+                var responceContent = await responce.Content.ReadAsStringAsync();
+                var data = JsonSerializer.Deserialize<List<Movie>>(responceContent);
+                return data;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при запросе");
+                return new List<Movie>();
+            }
+        }
         public async Task<List<Movie>> FilterMovies(string? name,string? genre, int? page,int? pageSize)
         {
             var url = $"api/Movie/all?name={name}&genre={genre}&page={page}&pageSize={pageSize}";
