@@ -54,9 +54,9 @@
 		IsVisible = false;
 		IsVisibleChanged.InvokeAsync(IsVisible);
 	}
-	private async Task GetAllMovies(int page, int pageSize)
+	private async Task GetAllMovies()
 	{
-		var all = await ApiRequest.GetAllMovies(page, pageSize);
+		var all = await ApiRequest.All();
 		movies = all;
 		StateHasChanged();
 
@@ -77,7 +77,8 @@
 			content.Add(fileStream, "file", selectedFile.Name);
 			string url = movieToEdit.image;
 			string fileName = url.Split('/').Last();
-			var requestMessage = new HttpRequestMessage(HttpMethod.Put, $"https://localhost:7270/api/Photos/update/{fileName}")
+			var requestUrl = string.IsNullOrEmpty(movieToEdit.image) ? "https://localhost:7270/api/Photos/upload" : $"https://localhost:7270/api/Photos/update/{fileName}";
+			var requestMessage = new HttpRequestMessage(string.IsNullOrEmpty(movieToEdit.image) ? HttpMethod.Post:HttpMethod.Put, $"{requestUrl}")
 				{
 					Content = content
 				};
@@ -114,8 +115,8 @@
 		bool res = await ApiRequest.EditMovie(movieToEdit.id, movie);
 		if (res)
 		{
-			await GetAllMovies(currentPage, 10);
-			await OnMovieUpdated.InvokeAsync(movies);
+			await GetAllMovies();
+			await OnMovieUpdated.InvokeAsync();
 			success = "добавление прошло успешно";
 			StateHasChanged();
 			await Task.Delay(1000);

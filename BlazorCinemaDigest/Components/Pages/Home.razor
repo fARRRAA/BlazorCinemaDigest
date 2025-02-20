@@ -82,7 +82,7 @@ else
 @if (pageCount > 0)
 {
 	<div style="display:flex;gap:10px;margin-top:50px;margin-bottom:50px;">
-		@foreach (var i in Enumerable.Range(1, pageCount))
+		@foreach (var i in Enumerable.Range(1, pageCount+1))
 		{
 			<button @onclick="async () => await ChangePage(i)">
 				<div style="padding:10px 13px; margin:0px;">

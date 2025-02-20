@@ -107,7 +107,7 @@ namespace BlazorCinemaDigest.ApiRequest
         }
         public async Task<bool> DeleteMovie(int id)
         {
-            var response = await _httpClient.DeleteAsync($"api/Movie/update/{id}");
+            var response = await _httpClient.DeleteAsync($"api/Movie/delete/{id}");
             response.EnsureSuccessStatusCode();
 
             return true;

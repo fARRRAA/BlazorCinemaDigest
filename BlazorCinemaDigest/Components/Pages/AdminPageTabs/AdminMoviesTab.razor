@@ -4,11 +4,13 @@
 @using BlazorCinemaDigest.ApiRequest.Model
 @using BlazorCinemaDigest.Components.MovieModals
 @using BlazorCinemaDigest.Components.UserModals
+@inject IJSRuntime JSRuntime
 
 @code {
 	[Inject] private MovieApiService ApiRequest { get; set; }
 
 	private List<Movie> movies;
+	private List<Movie> allMovies;
 	private int page = 1;
 	private int pageSize = 10;
 	private int pageCount;
@@ -23,6 +25,7 @@
 	{
 		await GetAllMovies(1, pageSize);
 		var all = await ApiRequest.All();
+		allMovies=all;
 		pageCount = all.Count / pageSize;
 		currentPage = 1;
 	}
@@ -34,7 +37,7 @@
 	}
 	private async Task ChangePage(int page)
 	{
-		var all = await ApiRequest.GetAllMovies(page,pageSize);
+		var all = await ApiRequest.GetAllMovies(page, pageSize);
 		movies = all;
 		StateHasChanged();
 	}
@@ -48,21 +51,30 @@
 	{
 		isAddMovieModalVisible = true;
 	}
-	async Task DeleteMovie(int id)
+
+
+	private async Task DeleteMovie(int id)
 	{
-		// await ApiRequest.Delet(id);
-		await GetAllMovies(1, pageSize);
-		StateHasChanged();
-		success = "удаление прошло успешно";
-		await Task.Delay(1000);
+		bool confirmed = await JSRuntime.InvokeAsync<bool>("showConfirmationDialog", "Вы уверены, что хотите удалить этот фильм?");
 
-		success = null;
-		StateHasChanged();
-
+		if (confirmed)
+		{
+			await ApiRequest.DeleteMovie(id);
+			await GetAllMovies(currentPage, pageSize);
+			StateHasChanged();
+			success = "удаление прошло успешно";
+			await Task.Delay(1000);
+			success = null;
+			StateHasChanged();
+		}
 	}
-	private void HandleMovieUpdated(List<Movie> newMovies)
+	private async void HandleMovieUpdated()
 	{
-		movies = newMovies;
+		await GetAllMovies(currentPage,pageSize);
+
+		var all = await ApiRequest.All();
+		pageCount = all.Count / pageSize;
+		StateHasChanged();
 	}
 }
 
@@ -143,7 +155,7 @@
 	@if (pageCount > 0)
 	{
 		<div style="display:flex;gap:10px;">
-			@foreach (var i in Enumerable.Range(1, pageCount))
+			@foreach (var i in Enumerable.Range(1, pageCount+1))
 			{
 				<button @onclick="async () =>{currentPage=i; await ChangePage(i);}">
 					<div style="padding:7px 10px; margin:0px;">
