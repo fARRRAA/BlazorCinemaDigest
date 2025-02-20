@@ -332,7 +332,7 @@ button {
 .movie_card {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 13px;
     max-width: 300px;
     min-height: 420px;
     transition:0.3s ease;

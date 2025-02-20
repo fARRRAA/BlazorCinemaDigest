@@ -100,7 +100,7 @@ namespace BlazorCinemaDigest.ApiRequest
                    Encoding.UTF8,
                    "application/json");
 
-            var response = await _httpClient.PostAsync($"api/Movie/update/{id}", content);
+            var response = await _httpClient.PutAsync($"api/Movie/update/{id}", content);
             response.EnsureSuccessStatusCode();
 
             return true;

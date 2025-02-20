@@ -11,23 +11,34 @@
 	private List<Movie> movies;
 	private int page = 1;
 	private int pageSize = 10;
+	private int pageCount;
 	private bool isEditMovieModalVisible = false;
 	private bool isAddMovieModalVisible = false;
 	private Movie movieToEdit = new Movie();
 	string error;
 	string success;
+	private int currentPage;
 
 	protected override async Task OnInitializedAsync()
 	{
 		await GetAllMovies(1, pageSize);
+		var all = await ApiRequest.All();
+		pageCount = all.Count / pageSize;
+		currentPage = 1;
 	}
 	private async Task GetAllMovies(int page, int pageSize)
 	{
 		var all = await ApiRequest.GetAllMovies(page, pageSize);
 		movies = all;
 		StateHasChanged();
-
 	}
+	private async Task ChangePage(int page)
+	{
+		var all = await ApiRequest.GetAllMovies(page,pageSize);
+		movies = all;
+		StateHasChanged();
+	}
+
 	private void OpenEditMovieModal(Movie movie)
 	{
 		isEditMovieModalVisible = true;
@@ -129,11 +140,24 @@
 			</tbody>
 		</table>
 	</p>
+	@if (pageCount > 0)
+	{
+		<div style="display:flex;gap:10px;">
+			@foreach (var i in Enumerable.Range(1, pageCount))
+			{
+				<button @onclick="async () =>{currentPage=i; await ChangePage(i);}">
+					<div style="padding:7px 10px; margin:0px;">
+						<div>@i</div>
+					</div>
+				</button>
+			}
+		</div>
+	}
 	<div class="pt-1 mb-4">
 		<button class="btn btn-info btn-lg btn-block" @onclick="()=>OpenAddMovieModal()" type="button">Добавить фильм</button>
 	</div>
 
 
-	<EditMovieModal IsVisible="@isEditMovieModalVisible" movieToEdit="movieToEdit" parentMovies="movies" OnMovieUpdated="HandleMovieUpdated" IsVisibleChanged="@((value) => isEditMovieModalVisible = value)" />
+	<EditMovieModal currentPage="@currentPage" IsVisible="@isEditMovieModalVisible" movieToEdit="movieToEdit" parentMovies="movies" OnMovieUpdated="HandleMovieUpdated" IsVisibleChanged="@((value) => isEditMovieModalVisible = value)" />
 	<AddMovieModal IsVisible="@isAddMovieModalVisible" IsVisibleChanged="@((value) => isAddMovieModalVisible = value)" parentMovies="movies" OnMovieUpdated="HandleMovieUpdated" />
 </div>

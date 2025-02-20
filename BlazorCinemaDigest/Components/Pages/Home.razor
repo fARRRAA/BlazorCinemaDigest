@@ -10,16 +10,28 @@
 	private string searchText = ""; 
 	private string selectedGenre ="";
 	private int page = 1;
-	private int pageSize = 10;
+	private int pageSize = 12;
+	private int pageCount;
+
 	protected override async Task OnInitializedAsync()
 	{
-		await GetAllMovies();
+		await GetAllMovies(1, pageSize);
 		await GetAllGenres();
+
+		var all = await MovieApi.All();
+		pageCount = all.Count / pageSize;
 	}
-	private async Task GetAllMovies()
+	private async Task GetAllMovies(int page, int pageSize)
 	{
-		var allmovies = await MovieApi.GetAllMovies(page,pageSize);
-		movies = allmovies;
+		var all = await MovieApi.GetAllMovies(page, pageSize);
+		movies = all;
+		StateHasChanged();
+	}
+	private async Task ChangePage(int page)
+	{
+		var all = await MovieApi.GetAllMovies(page, pageSize);
+		movies = all;
+		StateHasChanged();
 	}
 	private async Task GetAllGenres(){
 		var allgenres = await GenreApi.GetAllGenres();
@@ -66,6 +78,19 @@ margin-top:30px;
 else
 {
 	<div class="alert alert-success">Фильмы не найдены</div>
+}
+@if (pageCount > 0)
+{
+	<div style="display:flex;gap:10px;margin-top:50px;margin-bottom:50px;">
+		@foreach (var i in Enumerable.Range(1, pageCount))
+		{
+			<button @onclick="async () => await ChangePage(i)">
+				<div style="padding:10px 13px; margin:0px;">
+					<div>@i</div>
+				</div>
+			</button>
+		}
+	</div>
 }
 <style>
 	.search-filter-container {

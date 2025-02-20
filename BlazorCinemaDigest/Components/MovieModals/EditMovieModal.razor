@@ -12,6 +12,7 @@
 	[Parameter] public List<Movie> parentMovies { get; set; }
 	[Parameter]
 	public EventCallback<List<Movie>> OnMovieUpdated { get; set; }
+	[Parameter] public int currentPage { get; set; }
 	[Parameter] public Movie movieToEdit { get; set; }
 	[Inject] GenreApiService GenreApi { get; set; }
 	public Movie movie = new Movie();
@@ -21,8 +22,9 @@
 	private bool isModalVisible = false;
 	string error;
 	string success;
+
 	// private MovieRequest movieToAdd = new MovieRequest();
-	private string selectedGenre = "";
+	private string selectedGenre;
 	private IBrowserFile selectedFile;
 	private HttpClient _httpClient;
 
@@ -30,12 +32,18 @@
 	{
 		await GetAllGenres();
 		_httpClient = new HttpClient();
-		if (movieToEdit.Genre!=null){
+	}
+	protected override void OnParametersSet()
+	{
+		if (movieToEdit?.Genre != null)
+		{
 			selectedGenre = movieToEdit.Genre.name;
-
+		}
+		else
+		{
+			selectedGenre = "";
 		}
 	}
-
 	private async Task GetAllGenres()
 	{
 		var allgenres = await GenreApi.GetAllGenres();
@@ -60,58 +68,61 @@
 		movieToEdit.Genre = genres.FirstOrDefault(x => x.name == selectedGenre);
 		movieToEdit.genreId = movieToEdit.Genre.id;
 
-		var url = "https://localhost:7270/api/Photos/photo/customer-support.png";
-
 		if (selectedFile != null)
 		{
 			var content = new MultipartFormDataContent();
 
-			var fileStream = new StreamContent(selectedFile.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024));
+			var fileStream = new StreamContent(selectedFile.OpenReadStream(maxAllowedSize: 2 * 20024 * 20024));
 			fileStream.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(selectedFile.ContentType);
 			content.Add(fileStream, "file", selectedFile.Name);
-
-			var requestMessage = new HttpRequestMessage(HttpMethod.Post, "https://localhost:7270/api/Photos/upload")
+			string url = movieToEdit.image;
+			string fileName = url.Split('/').Last();
+			var requestMessage = new HttpRequestMessage(HttpMethod.Put, $"https://localhost:7270/api/Photos/update/{fileName}")
 				{
 					Content = content
 				};
 			var token = UserService.CurrentUser.token;
 			requestMessage.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 			var response = await _httpClient.SendAsync(requestMessage);
-
+			
 			if (response.IsSuccessStatusCode)
 			{
-				var photo = await response.Content.ReadFromJsonAsync<MoviePhoto>();
-				movieToEdit.image = photo.Url;
-			}
-			var movie = new MovieRequest()
+				try
 				{
-					name = movieToEdit.name,
-					description = movieToEdit.description,
-					rating = movieToEdit.rating,
-					duration = movieToEdit.duration,
-					genreId = movieToEdit.genreId,
-					Genre = movieToEdit.Genre,
-					releaseYear = movieToEdit.releaseYear,
-					image = movieToEdit.image
-
-				};
-			bool res = await ApiRequest.EditMovie(movieToEdit.id, movie);
-			if (res)
-			{
-				await GetAllMovies(1, 10);
-				await OnMovieUpdated.InvokeAsync(movies);
-				success = "добавление прошло успешно";
-				StateHasChanged();
-				await Task.Delay(1000);
-				success = null;
-				StateHasChanged();
-				CloseModal();
+					var photo = await response.Content.ReadFromJsonAsync<MoviePhoto>();
+					movieToEdit.image = photo.Url;
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"Ошибка десериализации: {ex.Message}");
+				}
 			}
+
 		}
+		var movie = new MovieRequest()
+			{
+				name = movieToEdit.name,
+				description = movieToEdit.description,
+				rating = movieToEdit.rating,
+				duration = movieToEdit.duration,
+				genreId = movieToEdit.genreId,
+				Genre = movieToEdit.Genre,
+				releaseYear = movieToEdit.releaseYear,
+				image = movieToEdit.image
 
-
-
-
+			};
+		bool res = await ApiRequest.EditMovie(movieToEdit.id, movie);
+		if (res)
+		{
+			await GetAllMovies(currentPage, 10);
+			await OnMovieUpdated.InvokeAsync(movies);
+			success = "добавление прошло успешно";
+			StateHasChanged();
+			await Task.Delay(1000);
+			success = null;
+			StateHasChanged();
+			CloseModal();
+		}
 	}
 	private async Task HandleFileSelected(InputFileChangeEventArgs e)
 	{
@@ -187,7 +198,7 @@
 					</div>
 				</EditForm>
 			</div>
-			<div class="modal-footer">
+			<div class="modal-footer mt-1" style="margin:10px;">
 				<button type="button" class="btn btn-secondary" @onclick="CloseModal">Закрыть</button>
 			</div>
 		</div>

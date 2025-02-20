@@ -6,23 +6,39 @@
 	[Parameter] public Movie movie { get; set; }
 }
 <NavLink href="@($"movie/{movie.id}")">
-	<div class="movie_card shadow-lg" style="    width: 300px;
-    min-height: 420px;">
-		<img src="@movie.image" style="object-fit:cover;" height="380"  alt="Movie Image">
-		<div class="card-body">
-			<h5 class="card-title" style="max-width:300px">@movie.name</h5>
-			<div class="mb-3">
-				<span class="">Жанр:</span>
-				<span class="">@movie.Genre.name</span>
-			</div>
-			<div class="d-flex justify-content-between align-items-center">
-				<span class="rating">★ @movie.rating</span>
-				<span class="text-muted">@movie.duration.Hours ч @movie.duration.Minutes мин</span>
-			</div>
-			<small class="text-muted">Год выхода: @movie.releaseYear</small>
-		</div>
-	</div>
+    <div class="movie_card shadow-lg" style="width: 300px; min-height: 420px;height:565px;gap:0px;">
+        <img src="@movie.image" style="object-fit:cover;" height="380" alt="Movie Image">
+        <div class="card-body d-flex flex-column justify-content-between">
+            <!-- Верхняя часть карточки -->
+            <div>
+                <h5 class="card-title" style="max-width:300px">@movie.name</h5>
+                <div class="mb-3">
+                    <span class="">Жанр:</span>
+                    <span class="">@movie.Genre.name</span>
+                </div>
+            </div>
+
+            <!-- Нижняя часть карточки -->
+            <div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="rating">★ @movie.rating</span>
+                    <span class="text-muted">@movie.duration.Hours ч @movie.duration.Minutes мин</span>
+                </div>
+                <small class="text-muted">Год выхода: @movie.releaseYear</small>
+            </div>
+        </div>
+    </div>
 </NavLink>
 <style>
+    .card-body {
+        padding: 16px; /* Добавьте отступы внутри карточки */
+    }
 
+    .movie_card {
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #ddd; /* Добавьте границу для карточки */
+        border-radius: 8px; /* Скруглите углы */
+        overflow: hidden; /* Уберите выход за пределы карточки */
+    }
 </style>
