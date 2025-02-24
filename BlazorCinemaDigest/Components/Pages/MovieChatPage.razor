@@ -1,0 +1,232 @@
+﻿@page "/movie/{movieId:int}/chat/{chatId:int}"
+@rendermode InteractiveServer
+@using BlazorCinemaDigest.ApiRequest
+@using BlazorCinemaDigest.ApiRequest.Model
+@using BlazorCinemaDigest.ApiRequest.Services
+@using System.Reflection.Metadata
+@using Microsoft.AspNetCore.SignalR.Client
+@using static BlazorCinemaDigest.ApiRequest.Services.UserService
+@inject NavigationManager Navigation
+@inject UserService UserService
+@inject ChatApiService ChatApiService
+@inject MovieApiService MovieApiService
+@inject UserApiService UserApiService
+@inject IJSRuntime JSRuntime
+
+@code {
+	[Parameter] public int movieId { get; set; }
+	[Parameter] public int chatId { get; set; }
+	private MovieChat movieChat;
+	private Movie movie;
+	private User user;
+	private string newMessage = string.Empty;
+	HubConnection hubConnection;
+	private List<MovieChatMessage> messages = new();
+	Random rnd = new Random();
+	protected override async Task OnInitializedAsync()
+	{
+		hubConnection = new HubConnectionBuilder().WithUrl("https://localhost:7253/chatHub").Build();
+		hubConnection.On<User, MovieChatMessage>("ReceiveMessage", (user, message) =>
+		{
+			messages.Add(message);
+			InvokeAsync(StateHasChanged);
+		});
+		await hubConnection.StartAsync();
+	}
+	protected override async Task OnParametersSetAsync()
+	{
+		var chat = await ChatApiService.GetMovieChatById(chatId);
+		movieChat = chat;
+		var movieResponce = await MovieApiService.GetMovieById(movieId);
+		movie = movieResponce;
+		var userResponce = await UserApiService.GetUserByIdAsync(UserService.CurrentUser.userId);
+		user = userResponce;
+	}
+	private async Task SendMessage()
+	{
+		var message = new MovieChatMessage() {
+			id=rnd.Next(1,1000),
+			chatId=chatId,
+			userId=user.id,
+			sent_at=DateTime.Now,
+			photoUrl=string.Empty
+		};
+		await hubConnection.SendAsync("SendMessage",user,message);
+		newMessage = string.Empty;
+		// await ScrollToBottom();
+		StateHasChanged();
+	}
+	private async Task ScrollToBottom()
+	{
+		await Task.Delay(50);
+		await JSRuntime.InvokeVoidAsync("scrollBottom");
+	}
+}
+<div class="chat-container">
+	@if (@movie != null)
+	{
+		<div class="chat-header">
+			<h2>Обсуждение фильма @movie.name</h2>
+		</div>
+	}
+	<div class="chat-messages" id="chat-messages">
+		@* @foreach (var message in messages) *@
+		@* { *@
+		@* 	<div class="message @(message.IsMe ? "my-message" : "other-message")"> *@
+		@* 		<div class="message-header"> *@
+		@* 			<img src="/imgs/emptyimg.png" alt="Avatar" class="avatar" /> *@
+		@* 			<span class="sender-name">@message.SenderName</span> *@
+		@* 		</div> *@
+		@* 		<div class="message-content"> *@
+		@* 			@message.Text *@
+		@* 		</div> *@
+		@* 		<div class="message-footer"> *@
+		@* 			<span class="timestamp">@message.Timestamp.ToString("dd.MM.yyyy HH:mm")</span> *@
+		@* 		</div> *@
+		@* 	</div> *@
+		@* } *@
+	</div>
+	<div class="chat-input">
+		<input type="text" placeholder="Введите сообщение..." @bind="newMessage" />
+		<button class="attach-button">
+			<svg width="12" height="20" viewBox="0 0 12 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+				<path d="M6 20C4.44908 20.0376 2.94653 19.4587 1.82179 18.3902C0.697047 17.3217 0.0419018 15.8508 0 14.3V4.12999C0.028834 3.0089 0.500645 1.94489 1.31216 1.17085C2.12368 0.396822 3.20879 -0.0241821 4.33 -6.6763e-06C5.45292 -0.0268679 6.54061 0.39294 7.3543 1.16726C8.16799 1.94158 8.64118 3.00713 8.67 4.12999V14.31C8.62841 14.9886 8.32954 15.6257 7.83432 16.0915C7.33911 16.5573 6.68486 16.8167 6.005 16.8167C5.32515 16.8167 4.6709 16.5573 4.17568 16.0915C3.68047 15.6257 3.38159 14.9886 3.34 14.31V4.91999C3.34 4.65478 3.44536 4.40042 3.63289 4.21289C3.82043 4.02535 4.07478 3.91999 4.34 3.91999C4.60522 3.91999 4.85957 4.02535 5.04711 4.21289C5.23464 4.40042 5.34 4.65478 5.34 4.91999V14.31C5.35994 14.4723 5.43857 14.6217 5.56106 14.7301C5.68356 14.8385 5.84145 14.8983 6.005 14.8983C6.16855 14.8983 6.32644 14.8385 6.44894 14.7301C6.57143 14.6217 6.65006 14.4723 6.67 14.31V4.12999C6.63891 3.5384 6.37577 2.98294 5.93768 2.58417C5.49958 2.18539 4.9219 1.97548 4.33 1.99999C3.73979 1.97817 3.16467 2.1893 2.72876 2.58779C2.29285 2.98629 2.0311 3.5402 2 4.12999V14.3C2.04163 15.3204 2.48597 16.2828 3.23569 16.9763C3.98541 17.6698 4.97942 18.0379 6 18C7.02058 18.0379 8.01459 17.6698 8.76431 16.9763C9.51403 16.2828 9.95837 15.3204 10 14.3V4.12999C10 3.86478 10.1054 3.61042 10.2929 3.42289C10.4804 3.23535 10.7348 3.12999 11 3.12999C11.2652 3.12999 11.5196 3.23535 11.7071 3.42289C11.8946 3.61042 12 3.86478 12 4.12999V14.3C11.9581 15.8508 11.303 17.3217 10.1782 18.3902C9.05347 19.4587 7.55092 20.0376 6 20Z" fill="white" />
+			</svg>
+		</button>
+		<button class="send-button" @onclick="SendMessage">
+			<svg width="19" height="16" viewBox="0 0 19 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+				<path d="M0 16V10L8 8L0 6V0L19 8L0 16Z" fill="white" />
+			</svg>
+		</button>
+	</div>
+</div>
+<style>
+	/* Общий стиль контейнера */
+	.chat-container {
+		display: flex;
+		flex-direction: column;
+		height: 100vh;
+		background-color: #f8f9fa;
+		font-family: 'Arial', sans-serif;
+		color: #333;
+		border-radius: 7px;
+	}
+	/* Заголовок чата */
+	.chat-header {
+		background-color: #0d6efd;
+		color: white;
+		padding: 5px;
+		text-align: center;
+		font-size: 16px;
+		border-bottom: 1px solid #ccc;
+		border-radius: 7px;
+	}
+
+		.chat-header > h2 {
+			font-size: 24px;
+		}
+	/* Область сообщений */
+	.chat-messages {
+		flex: 1;
+		overflow-y: auto;
+		padding: 15px;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		border-radius: 7px;
+	}
+	/* Сообщение */
+	.message {
+		max-width: 70%;
+		padding: 10px;
+		border-radius: 10px;
+		display: flex;
+		flex-direction: column;
+		gap: 5px;
+		min-width: 200px;
+	}
+	/* Сообщение от других пользователей */
+	.other-message {
+		align-self: flex-start;
+		background-color: #e9ecef;
+	}
+	/* Сообщение от меня */
+	.my-message {
+		align-self: flex-end;
+		background-color: #0d6efd;
+		color: white;
+	}
+	/* Заголовок сообщения */
+	.message-header {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+	/* Иконка пользователя */
+	.avatar {
+		width: 30px;
+		height: 30px;
+		border-radius: 50%;
+		object-fit: cover;
+	}
+	/* Имя отправителя */
+	.sender-name {
+		font-weight: bold;
+	}
+	/* Содержимое сообщения */
+	.message-content {
+		word-wrap: break-word;
+	}
+	/* Футер сообщения (дата) */
+	.message-footer {
+		display: flex;
+		justify-content: flex-end; /* Прикрепляем дату к правому краю */
+		margin-top: 5px; /* Отступ сверху */
+	}
+	/* Время отправки */
+	.timestamp {
+		font-size: 0.8rem;
+		color: #6c757d; /* Цвет по умолчанию */
+	}
+	/* Цвет даты для моих сообщений */
+	.my-message .timestamp {
+		color: white; /* Белый цвет для моих сообщений */
+	}
+	/* Поле ввода сообщения */
+	.chat-input {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 10px;
+		background-color: white;
+		border-top: 1px solid #ccc;
+	}
+		/* Поле ввода текста */
+		.chat-input input {
+			flex: 1;
+			padding: 10px;
+			border: 1px solid #ccc;
+			border-radius: 5px;
+			font-size: 1rem;
+		}
+	/* Кнопки прикрепления и отправки */
+	.attach-button,
+	.send-button {
+		background-color: #0d6efd;
+		color: white;
+		border: none;
+		padding: 10px;
+		border-radius: 5px;
+		cursor: pointer;
+		transition: background-color 0.3s ease;
+	}
+
+		.attach-button:hover,
+		.send-button:hover {
+			background-color: #0b5ed7;
+		}
+	/* Иконки */
+	.fas {
+		font-size: 1.2rem;
+	}
+</style>

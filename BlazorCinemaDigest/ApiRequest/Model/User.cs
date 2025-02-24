@@ -9,7 +9,7 @@ namespace BlazorCinemaDigest.ApiRequest.Model
         public int id { get; set; }
         public string name { get; set; }
     }
-    public class UserResponce
+    public class User
     {
         public int id { get; set; }
         public string name { get; set; }
@@ -30,7 +30,7 @@ namespace BlazorCinemaDigest.ApiRequest.Model
 
     public class UserDataContainer
     {
-        public List<UserResponce> users { get; set; }
+        public List<User> users { get; set; }
     }
 
     public class ReqDataUser

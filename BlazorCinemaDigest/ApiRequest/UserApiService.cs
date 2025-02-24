@@ -93,7 +93,7 @@ namespace BlazorCinemaDigest.ApiRequest
                 return new SingleTonUser();
             }
         }
-        public async Task<UserResponce> GetUserByIdAsync(int id)
+        public async Task<User> GetUserByIdAsync(int id)
         {
             try
             {
@@ -101,12 +101,12 @@ namespace BlazorCinemaDigest.ApiRequest
                 var response = await _httpClient.GetAsync($"api/Users/user/{id}");
                 response.EnsureSuccessStatusCode();
 
-                return JsonSerializer.Deserialize<UserResponce>(await response.Content.ReadAsStringAsync());
+                return JsonSerializer.Deserialize<User>(await response.Content.ReadAsStringAsync());
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Ошибка при запросе: {ex.Message}");
-                return new UserResponce();
+                return new User();
             }
         }
         public async Task<UserAddData> RegisterUser(ReqDataUser user)

@@ -6,12 +6,12 @@
 	[Parameter] public bool IsVisible { get; set; }
 	[Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
 	[Parameter]
-	public List<UserResponce> parentUsers { get; set; }
+	public List<User> parentUsers { get; set; }
 	// [Parameter] public int userId { get; set; }
-	[Parameter] public UserResponce user { get; set; }
-	public UserResponce userOld = new UserResponce();
+	[Parameter] public User user { get; set; }
+	public User userOld = new User();
 	[Inject] private UserApiService ApiRequest { get; set; }
-	private List<UserResponce> users;
+	private List<User> users;
 	private bool isModalVisible = false;
 	string error;
 	string success;
@@ -34,7 +34,7 @@
 	private async Task getAllUsers()
 	{
 		var userData = await ApiRequest.GetAllUsersAsync();
-		users = userData?.data?.users ?? new List<UserResponce>();
+		users = userData?.data?.users ?? new List<User>();
 
 	}
 	private async void EditUser()

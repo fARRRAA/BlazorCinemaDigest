@@ -7,6 +7,26 @@
 @inject NavigationManager Navigation
 @inject UserService UserService
 
+@code {
+	[Parameter]
+	public int id { get; set; }
+	private User User;
+	[Inject] private UserApiService ApiRequest { get; set; }
+	protected override async Task OnInitializedAsync()
+	{
+		await getUser(id);
+	}
+	private async Task getUser(int id)
+	{
+		User = await ApiRequest.GetUserByIdAsync(id);
+
+	}
+	void LogOut()
+	{
+		UserService.UnsetUser(UserService.CurrentUser);
+		Navigation.NavigateTo("/");
+	}
+}
 
 @if(@User==null){
 	<p>Загрузка данных</p>
@@ -46,23 +66,4 @@ else {
 </div>
 }
 
-@code {
-	[Parameter]
-	public int id { get; set; }
-	private UserResponce User;
-	[Inject] private UserApiService ApiRequest { get; set; }
-	protected override async Task OnInitializedAsync()
-	{
-		await getUser(id);
-	}
-	private async Task getUser(int id)
-	{
-		User = await ApiRequest.GetUserByIdAsync(id);
 
-	}
-	void LogOut()
-	{
-		UserService.UnsetUser(UserService.CurrentUser);
-		Navigation.NavigateTo("/");
-	}
-}

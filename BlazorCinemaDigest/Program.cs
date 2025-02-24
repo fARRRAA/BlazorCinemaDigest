@@ -15,7 +15,7 @@ namespace BlazorCinemaDigest
             builder.Services.AddScoped<UserApiService>();
             builder.Services.AddScoped<MovieApiService>();
             builder.Services.AddScoped<GenreApiService>();
-
+            builder.Services.AddScoped<ChatApiService>();
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7253/") });
 
             builder.Services.AddSingleton<UserService>();

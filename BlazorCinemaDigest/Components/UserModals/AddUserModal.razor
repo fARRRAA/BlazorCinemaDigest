@@ -5,13 +5,13 @@
 @code {
 	[Parameter] public bool IsVisible { get; set; }
 	[Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
-	[Parameter]  public List<UserResponce> parentUsers { get; set; }
+	[Parameter]  public List<User> parentUsers { get; set; }
 	[Parameter]
-	public EventCallback<List<UserResponce>> OnUsersUpdated { get; set; }
+	public EventCallback<List<User>> OnUsersUpdated { get; set; }
 
 
 	[Inject] private UserApiService ApiRequest { get; set; }
-	private List<UserResponce> users;
+	private List<User> users;
 	private bool isModalVisible = false;
 	string error;
 	string success;
@@ -32,7 +32,7 @@
 	private async Task getAllUsers()
 	{
 		var userData = await ApiRequest.GetAllUsersAsync();
-		users = userData?.data?.users?.ToList() ?? new List<UserResponce>(); 
+		users = userData?.data?.users?.ToList() ?? new List<User>(); 
 		StateHasChanged();
 	}
 	private async void AddNewUser()

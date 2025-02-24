@@ -12,14 +12,14 @@
 
 
 @code {
-	private List<UserResponce> users;
+	private List<User> users;
 	private ReqDataUser reqDataUser = new ReqDataUser();
 	private bool isEditUserModalVisible = false;
 	private bool isAddUserModalVisible = false;
-	private UserResponce user=new UserResponce();
+	private User user=new User();
 	string error;
 	string success;
-	private void OpenEditUserModal(UserResponce userUpdate)
+	private void OpenEditUserModal(User userUpdate)
 	{
 		isEditUserModalVisible = true;
 		user = userUpdate;
@@ -41,12 +41,12 @@
 	private async Task getAllUsers()
 	{
 		var userData = await ApiRequest.GetAllUsersAsync();
-		users = userData?.data?.users ?? new List<UserResponce>();
+		users = userData?.data?.users ?? new List<User>();
 
 		StateHasChanged();
 	}
 
-	private void HandleUsersUpdated(List<UserResponce> updatedUsers)
+	private void HandleUsersUpdated(List<User> updatedUsers)
 	{
 		users = updatedUsers;
 	}
