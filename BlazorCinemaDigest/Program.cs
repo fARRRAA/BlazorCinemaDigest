@@ -16,7 +16,9 @@ namespace BlazorCinemaDigest
             builder.Services.AddScoped<MovieApiService>();
             builder.Services.AddScoped<GenreApiService>();
             builder.Services.AddScoped<ChatApiService>();
+            builder.Services.AddScoped<MovieChatMessageApiService>();
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7253/") });
+
 
             builder.Services.AddSingleton<UserService>();
 
@@ -27,7 +29,6 @@ namespace BlazorCinemaDigest
                 app.UseExceptionHandler("/Error");
                 app.UseHsts();
             }
-
             app.UseHttpsRedirection();
 
             app.UseStaticFiles();

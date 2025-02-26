@@ -12,7 +12,7 @@
 @inject MovieApiService MovieApiService
 @inject UserApiService UserApiService
 @inject IJSRuntime JSRuntime
-
+@inject MovieChatMessageApiService MessagesApiService
 @code {
 	[Parameter] public int movieId { get; set; }
 	[Parameter] public int chatId { get; set; }
@@ -21,40 +21,87 @@
 	private User user;
 	private string newMessage = string.Empty;
 	HubConnection hubConnection;
-	private List<MovieChatMessage> messages = new();
+	// private List<MovieChatMessage> messages = new();
+	private List<MovieChatMessage> messages;
+
 	Random rnd = new Random();
 	protected override async Task OnInitializedAsync()
 	{
-		hubConnection = new HubConnectionBuilder().WithUrl("https://localhost:7253/chatHub").Build();
-		hubConnection.On<User, MovieChatMessage>("ReceiveMessage", (user, message) =>
+		try
 		{
-			messages.Add(message);
-			InvokeAsync(StateHasChanged);
-		});
-		await hubConnection.StartAsync();
+			hubConnection = new HubConnectionBuilder()
+				.WithUrl("https://localhost:7253/chatHub")
+				.Build();
+
+			hubConnection.On<User, MovieChatMessage>("ReceiveMessage",async (user, message) =>
+			{
+				await UpdateMessages();
+				StateHasChanged();
+				await InvokeAsync(StateHasChanged);
+			});
+
+			await hubConnection.StartAsync();
+			Console.WriteLine("Соединение установлено");
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"Ошибка инициализации соединения: {ex.Message}");
+		}
+	}
+	public async Task UpdateMessages()
+	{
+		var msgs = await MessagesApiService.GetMessages();
+		messages = msgs;
+		StateHasChanged();
 	}
 	protected override async Task OnParametersSetAsync()
 	{
+		if(!UserService.IsAuthenticated)
+		{
+			Navigation.NavigateTo("/");
+		}
 		var chat = await ChatApiService.GetMovieChatById(chatId);
 		movieChat = chat;
 		var movieResponce = await MovieApiService.GetMovieById(movieId);
 		movie = movieResponce;
 		var userResponce = await UserApiService.GetUserByIdAsync(UserService.CurrentUser.userId);
 		user = userResponce;
+		await UpdateMessages();
+
 	}
+
 	private async Task SendMessage()
 	{
-		var message = new MovieChatMessage() {
-			id=rnd.Next(1,1000),
-			chatId=chatId,
-			userId=user.id,
-			sent_at=DateTime.Now,
-			photoUrl=string.Empty
-		};
-		await hubConnection.SendAsync("SendMessage",user,message);
-		newMessage = string.Empty;
-		// await ScrollToBottom();
-		StateHasChanged();
+		var message = new MovieChatMessageRequest()
+			{
+				chatId = chatId,
+				userId = user.id,
+				sent_at = DateTime.Now,
+				photoUrl = string.Empty,
+				message = newMessage,
+				User=user,
+				Chat=movieChat
+			};
+		message.Chat.Movie = movie;
+		try
+		{
+			if (hubConnection.State == HubConnectionState.Connected)
+			{
+				await hubConnection.SendAsync("SendMessage", user, message);
+				await MessagesApiService.CreateMessage(message);
+				await UpdateMessages();
+				StateHasChanged();
+
+			}
+			else
+			{
+				Console.WriteLine("Соединение не установлено");
+			}
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"Ошибка отправки сообщения: {ex.Message}");
+		}
 	}
 	private async Task ScrollToBottom()
 	{
@@ -70,21 +117,27 @@
 		</div>
 	}
 	<div class="chat-messages" id="chat-messages">
-		@* @foreach (var message in messages) *@
-		@* { *@
-		@* 	<div class="message @(message.IsMe ? "my-message" : "other-message")"> *@
-		@* 		<div class="message-header"> *@
-		@* 			<img src="/imgs/emptyimg.png" alt="Avatar" class="avatar" /> *@
-		@* 			<span class="sender-name">@message.SenderName</span> *@
-		@* 		</div> *@
-		@* 		<div class="message-content"> *@
-		@* 			@message.Text *@
-		@* 		</div> *@
-		@* 		<div class="message-footer"> *@
-		@* 			<span class="timestamp">@message.Timestamp.ToString("dd.MM.yyyy HH:mm")</span> *@
-		@* 		</div> *@
-		@* 	</div> *@
-		@* } *@
+		@if (messages!=null)
+		{
+			@if (messages.Count > 0)
+			{
+				@foreach (var message in messages)
+				{
+					<div class="message @(message.userId==user.id ? "my-message" : "other-message")">
+						<div class="message-header">
+							<img src="/imgs/emptyimg.png" alt="Avatar" class="avatar" />
+							<span class="sender-name">@message.User.name</span>
+						</div>
+						<div class="message-content">
+							@message.message
+						</div>
+						<div class="message-footer">
+							<span class="timestamp">@message.sent_at.ToString("dd.MM.yyyy HH:mm")</span>
+						</div>
+					</div>
+				}
+			}
+		}
 	</div>
 	<div class="chat-input">
 		<input type="text" placeholder="Введите сообщение..." @bind="newMessage" />
