@@ -15,9 +15,9 @@ namespace BlazorCinemaDigest.ApiRequest.Services
         }
         //api/MovieChatMessage/api/movieChat/movie/messages
         //api/MovieChatMessage/api/movieChat/movie/message/add
-        public async Task<List<MovieChatMessage>> GetMessages()
+        public async Task<List<MovieChatMessage>> GetMessages(int chatId)
         {
-            var url = "api/MovieChatMessage/api/movieChat/movie/messages";
+            var url = $"api/MovieChatMessage/api/movieChat/movie/messages/{chatId}";
             var response = await _httpClient.GetAsync(url);
             response.EnsureSuccessStatusCode();
             var content = await response.Content.ReadAsStringAsync();

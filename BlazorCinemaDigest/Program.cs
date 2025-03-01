@@ -18,10 +18,7 @@ namespace BlazorCinemaDigest
             builder.Services.AddScoped<ChatApiService>();
             builder.Services.AddScoped<MovieChatMessageApiService>();
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7253/") });
-
-
             builder.Services.AddSingleton<UserService>();
-
             var app = builder.Build();
 
             if (!app.Environment.IsDevelopment())
@@ -33,7 +30,6 @@ namespace BlazorCinemaDigest
 
             app.UseStaticFiles();
             app.UseAntiforgery();
-
             app.MapRazorComponents<App>()
                 .AddInteractiveServerRenderMode();
 

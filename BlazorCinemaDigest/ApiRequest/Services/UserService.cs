@@ -1,4 +1,5 @@
 ﻿using BlazorCinemaDigest.ApiRequest.Model;
+using System.Text.Json;
 
 namespace BlazorCinemaDigest.ApiRequest.Services
 {

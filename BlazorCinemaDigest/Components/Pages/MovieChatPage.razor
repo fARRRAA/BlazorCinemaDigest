@@ -23,40 +23,33 @@
 	HubConnection hubConnection;
 	// private List<MovieChatMessage> messages = new();
 	private List<MovieChatMessage> messages;
+	private IBrowserFile selectedFile;
+	private HttpClient _httpClient;
 
-	Random rnd = new Random();
+
+
 	protected override async Task OnInitializedAsync()
 	{
-		try
-		{
-			hubConnection = new HubConnectionBuilder()
-				.WithUrl("https://localhost:7253/chatHub")
-				.Build();
+		_httpClient = new HttpClient();
 
-			hubConnection.On<User, MovieChatMessage>("ReceiveMessage",async (user, message) =>
-			{
-				await UpdateMessages();
-				StateHasChanged();
-				await InvokeAsync(StateHasChanged);
-			});
-
-			await hubConnection.StartAsync();
-			Console.WriteLine("Соединение установлено");
-		}
-		catch (Exception ex)
+		hubConnection = new HubConnectionBuilder().WithUrl("https://localhost:7253/chatHub").Build();
+		hubConnection.On<User, MovieChatMessage>("ReceiveMessage", async (user, message) =>
 		{
-			Console.WriteLine($"Ошибка инициализации соединения: {ex.Message}");
-		}
+			await UpdateMessages();
+			StateHasChanged();
+			await InvokeAsync(StateHasChanged);
+		});
+		await hubConnection.StartAsync();
 	}
 	public async Task UpdateMessages()
 	{
-		var msgs = await MessagesApiService.GetMessages();
+		var msgs = await MessagesApiService.GetMessages(chatId);
 		messages = msgs;
-		StateHasChanged();
+		await InvokeAsync(StateHasChanged);
 	}
 	protected override async Task OnParametersSetAsync()
 	{
-		if(!UserService.IsAuthenticated)
+		if (!UserService.IsAuthenticated)
 		{
 			Navigation.NavigateTo("/");
 		}
@@ -67,9 +60,7 @@
 		var userResponce = await UserApiService.GetUserByIdAsync(UserService.CurrentUser.userId);
 		user = userResponce;
 		await UpdateMessages();
-
 	}
-
 	private async Task SendMessage()
 	{
 		var message = new MovieChatMessageRequest()
@@ -79,34 +70,57 @@
 				sent_at = DateTime.Now,
 				photoUrl = string.Empty,
 				message = newMessage,
-				User=user,
-				Chat=movieChat
+				User = user,
+				Chat = movieChat
 			};
 		message.Chat.Movie = movie;
-		try
+		if (selectedFile != null)
 		{
-			if (hubConnection.State == HubConnectionState.Connected)
-			{
-				await hubConnection.SendAsync("SendMessage", user, message);
-				await MessagesApiService.CreateMessage(message);
-				await UpdateMessages();
-				StateHasChanged();
+			var content = new MultipartFormDataContent();
 
-			}
-			else
+			var fileStream = new StreamContent(selectedFile.OpenReadStream(maxAllowedSize: 2 * 20024 * 20024));
+			fileStream.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(selectedFile.ContentType);
+			content.Add(fileStream, "file", selectedFile.Name);
+			var requestUrl = "https://localhost:7270/api/Photos/upload";
+			var requestMessage = new HttpRequestMessage(HttpMethod.Post, $"{requestUrl}")
+				{
+					Content = content
+				};
+			var token = UserService.CurrentUser.token;
+			requestMessage.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+			var response = await _httpClient.SendAsync(requestMessage);
+
+			if (response.IsSuccessStatusCode)
 			{
-				Console.WriteLine("Соединение не установлено");
+				try
+				{
+					var photo = await response.Content.ReadFromJsonAsync<MoviePhoto>();
+					message.photoUrl = photo.Url;
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"Ошибка десериализации: {ex.Message}");
+				}
 			}
+
 		}
-		catch (Exception ex)
+		if (hubConnection.State == HubConnectionState.Connected)
 		{
-			Console.WriteLine($"Ошибка отправки сообщения: {ex.Message}");
+			await hubConnection.SendAsync("SendMessage", user, message);
+			await MessagesApiService.CreateMessage(message);
+			newMessage = string.Empty;
+
 		}
 	}
 	private async Task ScrollToBottom()
 	{
 		await Task.Delay(50);
 		await JSRuntime.InvokeVoidAsync("scrollBottom");
+	}
+
+	private async Task HandleFileSelected(InputFileChangeEventArgs e)
+	{
+		selectedFile = e.GetMultipleFiles(1).FirstOrDefault();
 	}
 }
 <div class="chat-container">
@@ -117,7 +131,7 @@
 		</div>
 	}
 	<div class="chat-messages" id="chat-messages">
-		@if (messages!=null)
+		@if (messages != null)
 		{
 			@if (messages.Count > 0)
 			{
@@ -129,6 +143,7 @@
 							<span class="sender-name">@message.User.name</span>
 						</div>
 						<div class="message-content">
+							<img src="@message.photoUrl" class="content_image"/>
 							@message.message
 						</div>
 						<div class="message-footer">
@@ -141,11 +156,12 @@
 	</div>
 	<div class="chat-input">
 		<input type="text" placeholder="Введите сообщение..." @bind="newMessage" />
-		<button class="attach-button">
+		<InputFile type="text" OnChange="HandleFileSelected" style="display: none;" class="form-control form-control-sm" id="photomessage" />
+		<label class="attach-button" for="photomessage">
 			<svg width="12" height="20" viewBox="0 0 12 20" fill="none" xmlns="http://www.w3.org/2000/svg">
 				<path d="M6 20C4.44908 20.0376 2.94653 19.4587 1.82179 18.3902C0.697047 17.3217 0.0419018 15.8508 0 14.3V4.12999C0.028834 3.0089 0.500645 1.94489 1.31216 1.17085C2.12368 0.396822 3.20879 -0.0241821 4.33 -6.6763e-06C5.45292 -0.0268679 6.54061 0.39294 7.3543 1.16726C8.16799 1.94158 8.64118 3.00713 8.67 4.12999V14.31C8.62841 14.9886 8.32954 15.6257 7.83432 16.0915C7.33911 16.5573 6.68486 16.8167 6.005 16.8167C5.32515 16.8167 4.6709 16.5573 4.17568 16.0915C3.68047 15.6257 3.38159 14.9886 3.34 14.31V4.91999C3.34 4.65478 3.44536 4.40042 3.63289 4.21289C3.82043 4.02535 4.07478 3.91999 4.34 3.91999C4.60522 3.91999 4.85957 4.02535 5.04711 4.21289C5.23464 4.40042 5.34 4.65478 5.34 4.91999V14.31C5.35994 14.4723 5.43857 14.6217 5.56106 14.7301C5.68356 14.8385 5.84145 14.8983 6.005 14.8983C6.16855 14.8983 6.32644 14.8385 6.44894 14.7301C6.57143 14.6217 6.65006 14.4723 6.67 14.31V4.12999C6.63891 3.5384 6.37577 2.98294 5.93768 2.58417C5.49958 2.18539 4.9219 1.97548 4.33 1.99999C3.73979 1.97817 3.16467 2.1893 2.72876 2.58779C2.29285 2.98629 2.0311 3.5402 2 4.12999V14.3C2.04163 15.3204 2.48597 16.2828 3.23569 16.9763C3.98541 17.6698 4.97942 18.0379 6 18C7.02058 18.0379 8.01459 17.6698 8.76431 16.9763C9.51403 16.2828 9.95837 15.3204 10 14.3V4.12999C10 3.86478 10.1054 3.61042 10.2929 3.42289C10.4804 3.23535 10.7348 3.12999 11 3.12999C11.2652 3.12999 11.5196 3.23535 11.7071 3.42289C11.8946 3.61042 12 3.86478 12 4.12999V14.3C11.9581 15.8508 11.303 17.3217 10.1782 18.3902C9.05347 19.4587 7.55092 20.0376 6 20Z" fill="white" />
 			</svg>
-		</button>
+		</label>
 		<button class="send-button" @onclick="SendMessage">
 			<svg width="19" height="16" viewBox="0 0 19 16" fill="none" xmlns="http://www.w3.org/2000/svg">
 				<path d="M0 16V10L8 8L0 6V0L19 8L0 16Z" fill="white" />
@@ -229,6 +245,15 @@
 	/* Содержимое сообщения */
 	.message-content {
 		word-wrap: break-word;
+		display:flex;
+		flex-direction:column;
+		align-items:start;
+		gap:10px;
+	}
+	.content_image {
+		width:200px;
+		aspect-ratio:1;
+		object-fit:cover;		
 	}
 	/* Футер сообщения (дата) */
 	.message-footer {
