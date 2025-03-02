@@ -7,6 +7,8 @@ namespace BlazorCinemaDigest
     {
         public static void Main(string[] args)
         {
+            AppContext.SetSwitch("System.Net.Http.HttpClientHandler.DangerousAcceptAnyServerCertificateValidator", true);
+
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddRazorComponents()
@@ -16,7 +18,7 @@ namespace BlazorCinemaDigest
             builder.Services.AddScoped<MovieApiService>();
             builder.Services.AddScoped<GenreApiService>();
             builder.Services.AddScoped<ChatApiService>();
-            builder.Services.AddScoped<MovieChatMessageApiService>();
+            builder.Services.AddScoped<ChatMessageApiService>();
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7253/") });
             builder.Services.AddSingleton<UserService>();
             var app = builder.Build();

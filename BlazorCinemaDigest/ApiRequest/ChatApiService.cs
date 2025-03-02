@@ -34,5 +34,24 @@ namespace BlazorCinemaDigest.ApiRequest
             return data;
 
         }
+        public async Task<UserChat> GetUserChatById(int id)
+        {
+            var url = $"api/Chat/chat/{id}";
+
+            var responce = await _httpClient.GetAsync(url);
+            responce.EnsureSuccessStatusCode();
+            var responceContent = await responce.Content.ReadAsStringAsync();
+            var data = JsonSerializer.Deserialize<UserChat>(responceContent);
+            return data;
+        }
+        public async Task<UserChat> GetUserChatByUsers(int senderId, int recipientId)
+        {
+            var url = $"api/UserChat/chat/from/{senderId}/to/{recipientId}";
+            var responce = await _httpClient.GetAsync(url);
+            responce.EnsureSuccessStatusCode();
+            var responceContent = await responce.Content.ReadAsStringAsync();
+            var data = JsonSerializer.Deserialize<UserChat>(responceContent);
+            return data;
+        }
     }
 }

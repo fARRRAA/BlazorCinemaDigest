@@ -1,4 +1,4 @@
-﻿@page "/movie/{movieId:int}/chat/{chatId:int}"
+﻿@page "/userChat/from/{senderId:int}/to/{recipientId:int}"
 @rendermode InteractiveServer
 @using BlazorCinemaDigest.ApiRequest
 @using BlazorCinemaDigest.ApiRequest.Model
@@ -14,66 +14,98 @@
 @inject IJSRuntime JSRuntime
 @inject ChatMessageApiService MessagesApiService
 @code {
-	[Parameter] public int movieId { get; set; }
-	[Parameter] public int chatId { get; set; }
-	private MovieChat movieChat;
-	private Movie movie;
-	private User user;
+
+	[Parameter] public int senderId { get; set; }
+	[Parameter] public int recipientId { get; set; }
+
+	private UserChat userChat;
+	private User recipientUser;
+	private User senderUser;
 	private string newMessage = string.Empty;
 	HubConnection hubConnection;
 	// private List<MovieChatMessage> messages = new();
-	private List<MovieChatMessage> messages;
+	private List<UserChatMessage> messages;
 	private IBrowserFile selectedFile;
 	private HttpClient _httpClient;
 
+	private System.Timers.Timer _timer;
+	private bool _isComponentActive = true;
 
+	public async ValueTask DisposeAsync()
+	{
+		_isComponentActive = false;
 
+		// Очистка ресурсов
+		_timer?.Stop();
+		_timer?.Dispose();
+
+		if (hubConnection.State == HubConnectionState.Connected)
+		{
+			await hubConnection.StopAsync();
+		}
+		await hubConnection.DisposeAsync();
+
+		_httpClient?.Dispose();
+	}
+
+	private async Task UpdateMessagesAndRefreshUI()
+	{
+		if (!_isComponentActive) return; // Проверка состояния компонента
+
+		await UpdateMessages();
+		await InvokeAsync(StateHasChanged);
+	}
 	protected override async Task OnInitializedAsync()
 	{
-		_httpClient = new HttpClient();
+		var chat = await ChatApiService.GetUserChatByUsers(senderId, recipientId);
+		userChat = chat;
+		var senderRes = await UserApiService.GetUserByIdAsync(senderId);
+		senderUser = senderRes;
+		var recipientRes = await UserApiService.GetUserByIdAsync(recipientId);
+		recipientUser = recipientRes;
 
+		_httpClient = new HttpClient();
 		hubConnection = new HubConnectionBuilder().WithUrl("https://localhost:7253/chatHub").Build();
-		hubConnection.On<User, MovieChatMessage>("ReceiveMessage", async (user, message) =>
+		await hubConnection.StartAsync();
+		hubConnection.On<User, User, UserChatMessageRequest>("ReceiveMessageFromUser", async (sender, recipient, message) =>
 		{
 			await UpdateMessages();
 			StateHasChanged();
 			await InvokeAsync(StateHasChanged);
 		});
-		await hubConnection.StartAsync();
+		// Инициализация таймера
+		_timer = new System.Timers.Timer(1000); // 1000 миллисекунд = 1 секунда
+		_timer.Elapsed += async (sender, e) => await UpdateMessagesAndRefreshUI();
+		_timer.AutoReset = true; // Повторять выполнение каждую секунду
+		_timer.Enabled = true;   // Включить таймер
 	}
+
 	public async Task UpdateMessages()
 	{
-		var msgs = await MessagesApiService.GetMovieChatMessages(chatId);
+		var msgs = await MessagesApiService.GetUserChatMessages(userChat.id);
 		messages = msgs;
+		StateHasChanged();
 		await InvokeAsync(StateHasChanged);
 	}
 	protected override async Task OnParametersSetAsync()
 	{
-		if (!UserService.IsAuthenticated)
-		{
-			Navigation.NavigateTo("/");
-		}
-		var chat = await ChatApiService.GetMovieChatById(chatId);
-		movieChat = chat;
-		var movieResponce = await MovieApiService.GetMovieById(movieId);
-		movie = movieResponce;
-		var userResponce = await UserApiService.GetUserByIdAsync(UserService.CurrentUser.userId);
-		user = userResponce;
+
 		await UpdateMessages();
+		StateHasChanged();
+		await InvokeAsync(StateHasChanged);
 	}
 	private async Task SendMessage()
 	{
-		var message = new MovieChatMessageRequest()
+		var message = new UserChatMessageRequest()
 			{
-				chatId = chatId,
-				userId = user.id,
+				chatId = userChat.id,
+				userId = senderId,
 				sent_at = DateTime.Now,
 				photoUrl = string.Empty,
-				message = newMessage,
-				User = user,
-				Chat = movieChat
+				message = string.IsNullOrEmpty(newMessage)?"":newMessage,
+				User = senderUser,
+				Chat = userChat
 			};
-		message.Chat.Movie = movie;
 		if (selectedFile != null)
 		{
 			var content = new MultipartFormDataContent();
@@ -81,35 +113,39 @@
 			var fileStream = new StreamContent(selectedFile.OpenReadStream(maxAllowedSize: 2 * 20024 * 20024));
 			fileStream.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(selectedFile.ContentType);
 			content.Add(fileStream, "file", selectedFile.Name);
-			var requestUrl = "https://localhost:7270/api/Photos/upload";
-			var requestMessage = new HttpRequestMessage(HttpMethod.Post, $"{requestUrl}")
+			var requestMessage = new HttpRequestMessage(HttpMethod.Post, "https://localhost:7270/api/Photos/upload")
 				{
 					Content = content
 				};
 			var token = UserService.CurrentUser.token;
 			requestMessage.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-			var response = await _httpClient.SendAsync(requestMessage);
-
-			if (response.IsSuccessStatusCode)
-			{
-				try
+			try{
+				var response = await _httpClient.SendAsync(requestMessage);
+				if (response.IsSuccessStatusCode)
 				{
-					var photo = await response.Content.ReadFromJsonAsync<MoviePhoto>();
-					message.photoUrl = photo.Url;
-				}
-				catch (Exception ex)
-				{
-					Console.WriteLine($"Ошибка десериализации: {ex.Message}");
+					try
+					{
+						var photo = await response.Content.ReadFromJsonAsync<MoviePhoto>();
+						message.photoUrl = photo.Url;
+					}
+					catch (Exception ex)
+					{
+						Console.WriteLine($"Ошибка десериализации: {ex.Message}");
+					}
 				}
 			}
+			catch(Exception ex){
 
+			}
 		}
 		if (hubConnection.State == HubConnectionState.Connected)
 		{
-			await hubConnection.SendAsync("SendMessage", user, message);
-			await MessagesApiService.CreateMovieChatMessage(message);
+			await hubConnection.SendAsync("SendMessageToUser", senderUser, recipientUser, message);
+			await MessagesApiService.CreateUserChatMessage(message);
 			newMessage = string.Empty;
-
+			await UpdateMessages();
+			StateHasChanged();
+			await InvokeAsync(StateHasChanged);
 		}
 	}
 	private async Task ScrollToBottom()
@@ -124,10 +160,10 @@
 	}
 }
 <div class="chat-container">
-	@if (@movie != null)
+	@if (recipientUser != null)
 	{
 		<div class="chat-header">
-			<h2>Обсуждение фильма @movie.name</h2>
+			<h2>Переписка с @recipientUser.name</h2>
 		</div>
 	}
 	<div class="chat-messages" id="chat-messages">
@@ -137,12 +173,10 @@
 			{
 				@foreach (var message in messages)
 				{
-					<div class="message @(message.userId==user.id ? "my-message" : "other-message")">
+					<div class="message @(message.userId==senderUser.id ? "my-message" : "other-message")">
 						<div class="message-header">
-							<NavLink href=@($"/userChat/from/{user.id}/to/{message.userId}")>
-								<img src="/imgs/emptyimg.png" alt="Avatar" class="avatar" />
-								<span class="sender-name">@message.User.name</span>
-							</NavLink>
+							<img src="/imgs/emptyimg.png" alt="Avatar" class="avatar" />
+							<span class="sender-name">@message.User.name</span>
 						</div>
 						<div class="message-content">
 							@if (!string.IsNullOrEmpty(message.photoUrl))
@@ -250,15 +284,16 @@
 	/* Содержимое сообщения */
 	.message-content {
 		word-wrap: break-word;
-		display:flex;
-		flex-direction:column;
-		align-items:start;
-		gap:10px;
+		display: flex;
+		flex-direction: column;
+		align-items: start;
+		gap: 10px;
 	}
+
 	.content_image {
-		width:200px;
-		aspect-ratio:1;
-		object-fit:cover;		
+		width: 200px;
+		aspect-ratio: 1;
+		object-fit: cover;
 	}
 	/* Футер сообщения (дата) */
 	.message-footer {

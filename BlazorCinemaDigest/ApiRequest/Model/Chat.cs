@@ -10,22 +10,26 @@ namespace BlazorCinemaDigest.ApiRequest.Model
         [Key]
         public int id { get; set; }
         [ForeignKey(nameof(FirstUser))]
-        public int firsUserId { get; set; }
+        public int firstUserId { get; set; }
+        [JsonPropertyName("firstUser")]
         public User FirstUser { get; set; }
         [ForeignKey(nameof(SecondUser))]
         public int secondUserId { get; set; }
+        [JsonPropertyName("secondUser")]
         public User SecondUser { get; set; }
         public DateTime created_at { get; set; }
     }
-    public class UserChatMesaage
+    public class UserChatMessage
     {
         [Key]
         public int id { get; set; }
         [ForeignKey(nameof(Chat))]
         public int chatId { get; set; }
+        [JsonPropertyName("chat")]
         public UserChat Chat { get; set; }
         [ForeignKey(nameof(User))]
         public int userId { get; set; }
+        [JsonPropertyName("user")]
         public User User { get; set; }
         public string message { get; set; }
         public DateTime sent_at { get; set; }
