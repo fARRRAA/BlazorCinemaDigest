@@ -72,6 +72,7 @@ namespace BlazorCinemaDigest.ApiRequest.Model
         public DateTime sent_at { get; set; }
         public string photoUrl { get; set; }
     }
+
     public class MovieChatMessageRequest
     {
         public int chatId { get; set; }

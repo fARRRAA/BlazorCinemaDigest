@@ -16,6 +16,9 @@
 @code {
 	[Parameter] public int movieId { get; set; }
 	[Parameter] public int chatId { get; set; }
+	private bool isEditMessageModalVisible = false;
+
+
 	private MovieChat movieChat;
 	private Movie movie;
 	private User user;
@@ -25,9 +28,20 @@
 	private List<MovieChatMessage> messages;
 	private IBrowserFile selectedFile;
 	private HttpClient _httpClient;
+	private MovieChatMessageRequest messageToEdit = new MovieChatMessageRequest();
+	private MovieChatMessage msgCurrent = new MovieChatMessage();
+	private void OpenEditMovieModal(MovieChatMessage msg)
+	{
+		isEditMessageModalVisible = true;
+		msgCurrent = msg;
+		StateHasChanged();
 
-
-
+	}
+	private void CloseModal()
+	{
+		isEditMessageModalVisible = false;
+		StateHasChanged();
+	}
 	protected override async Task OnInitializedAsync()
 	{
 		_httpClient = new HttpClient();
@@ -63,6 +77,13 @@
 	}
 	private async Task SendMessage()
 	{
+		if (string.IsNullOrEmpty(newMessage))
+		{
+			return;
+		}
+
+
+
 		var message = new MovieChatMessageRequest()
 			{
 				chatId = chatId,
@@ -122,6 +143,41 @@
 	{
 		selectedFile = e.GetMultipleFiles(1).FirstOrDefault();
 	}
+	private async void EditMessage()
+	{
+		if (string.IsNullOrEmpty(messageToEdit.message))
+		{
+			return;
+		}
+		messageToEdit.Chat = msgCurrent.Chat;
+		messageToEdit.photoUrl = msgCurrent.photoUrl;
+		messageToEdit.User = msgCurrent.User;
+		messageToEdit.sent_at = msgCurrent.sent_at;
+		messageToEdit.userId = msgCurrent.userId;
+		messageToEdit.chatId = msgCurrent.chatId;
+		messageToEdit.Chat.Movie = msgCurrent.Chat.Movie;
+		messageToEdit.Chat.Movie.Genre = movie.Genre;
+
+		await MessagesApiService.EditMovieMessage(msgCurrent.id, messageToEdit);
+		await UpdateMessages();
+		StateHasChanged();
+		messageToEdit.message = string.Empty;
+
+		CloseModal();
+	}
+	private async Task DeleteMovieMessage(int id)
+	{
+
+		// bool confirmed = await JSRuntime.InvokeAsync<bool>("showConfirmationDialog", "Вы уверены, что хотите удалить это сообщение?");
+
+		// if (confirmed)
+		// {
+			await MessagesApiService.DeleteMovieMessage(id);
+			await UpdateMessages();
+			StateHasChanged();
+		// }
+
+	}
 }
 <div class="chat-container">
 	@if (@movie != null)
@@ -141,7 +197,7 @@
 						<div class="message-header">
 							<NavLink href=@($"/userChat/from/{user.id}/to/{message.userId}")>
 								<img src="/imgs/emptyimg.png" alt="Avatar" class="avatar" />
-								<span class="sender-name">@message.User.name</span>
+								<span style="@(message.userId==user.id ? "color:white;" : "color:#333333")" class="sender-name">@message.User.name</span>
 							</NavLink>
 						</div>
 						<div class="message-content">
@@ -153,6 +209,24 @@
 						</div>
 						<div class="message-footer">
 							<span class="timestamp">@message.sent_at.ToString("dd.MM.yyyy HH:mm")</span>
+							@if (UserService.CurrentUser.role == "admin")
+							{
+								<div class="admin_btns">
+									<button @onclick="()=>OpenEditMovieModal(message)" style="background:none;">
+										<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M12 3H5C4.46957 3 3.96086 3.21071 3.58579 3.58579C3.21071 3.96086 3 4.46957 3 5V19C3 19.5304 3.21071 20.0391 3.58579 20.4142C3.96086 20.7893 4.46957 21 5 21H19C19.5304 21 20.0391 20.7893 20.4142 20.4142C20.7893 20.0391 21 19.5304 21 19V12" stroke="red" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+											<path d="M18.375 2.625C18.7728 2.22717 19.3124 2.00368 19.875 2.00368C20.4376 2.00368 20.9771 2.22717 21.375 2.625C21.7728 3.02282 21.9963 3.56239 21.9963 4.125C21.9963 4.68761 21.7728 5.22717 21.375 5.625L12.362 14.639C12.1245 14.8762 11.8312 15.0499 11.509 15.144L8.63597 15.984C8.54992 16.0091 8.45871 16.0106 8.37188 15.9884C8.28505 15.9661 8.2058 15.9209 8.14242 15.8576C8.07904 15.7942 8.03386 15.7149 8.01162 15.6281C7.98937 15.5413 7.99087 15.45 8.01597 15.364L8.85597 12.491C8.9505 12.169 9.12451 11.8761 9.36197 11.639L18.375 2.625Z" stroke="red" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+										</svg>
+									</button>
+									<button style="background:none;" @onclick="async()=> await DeleteMovieMessage(message.id)">
+										<svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M7 21C6.45 21 5.97933 20.8043 5.588 20.413C5.19667 20.0217 5.00067 19.5507 5 19V6H4V4H9V3H15V4H20V6H19V19C19 19.55 18.8043 20.021 18.413 20.413C18.0217 20.805 17.5507 21.0007 17 21H7ZM17 6H7V19H17V6ZM9 17H11V8H9V17ZM13 17H15V8H13V17Z" fill="red" />
+										</svg>
+
+									</button>
+								</div>
+							}
+
 						</div>
 					</div>
 				}
@@ -174,7 +248,39 @@
 		</button>
 	</div>
 </div>
+<div class="modal @(isEditMessageModalVisible ? "show" : "")" tabindex="-1" role="dialog" style="@(isEditMessageModalVisible ? "display: block;" : "display: none;")">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5>Изменить сообщение</h5>
+
+				<button type="button" class="close" @onclick="CloseModal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<div class="d-flex flex-column align-items-center h-custom-2 px-5 ms-xl-4 pt-5 pt-xl-0 mt-xl-n5">
+					<div class="form-outline mb-1">
+						<label class="form-label" for="form2Example28">Текст сообщения</label>
+						<InputText type="text" @bind-Value="@messageToEdit.message" class="form-control form-control-lg" />
+					</div>
+					<div class="pt-1 mb-4">
+						<button class="btn btn-info btn-lg btn-block" @onclick="EditMessage" type="button">Изменить</button>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer mt-1" style="margin:10px;">
+				<button type="button" class="btn btn-secondary" @onclick="CloseModal">Закрыть</button>
+			</div>
+		</div>
+	</div>
+</div>
 <style>
+	a {
+		text-decoration: none;
+		color: #333333;
+	}
+
 	/* Общий стиль контейнера */
 	.chat-container {
 		display: flex;
@@ -250,21 +356,28 @@
 	/* Содержимое сообщения */
 	.message-content {
 		word-wrap: break-word;
-		display:flex;
-		flex-direction:column;
-		align-items:start;
-		gap:10px;
+		display: flex;
+		flex-direction: column;
+		align-items: start;
+		gap: 10px;
 	}
+
 	.content_image {
-		width:200px;
-		aspect-ratio:1;
-		object-fit:cover;		
+		width: 200px;
+		aspect-ratio: 1;
+		object-fit: cover;
 	}
 	/* Футер сообщения (дата) */
 	.message-footer {
 		display: flex;
 		justify-content: flex-end; /* Прикрепляем дату к правому краю */
 		margin-top: 5px; /* Отступ сверху */
+		flex-direction: column;
+		gap: 5px;
+	}
+
+	.admin_btns {
+		display: flex;
 	}
 	/* Время отправки */
 	.timestamp {

@@ -1,6 +1,9 @@
 using BlazorCinemaDigest.ApiRequest.Services;
 using BlazorCinemaDigest.Components;
 using BlazorCinemaDigest.ApiRequest;
+using BlazorCinemaDigest.Services;
+
+using BlazorCinemaDigest.Store.Features;
 namespace BlazorCinemaDigest
 {
     public class Program
@@ -20,7 +23,9 @@ namespace BlazorCinemaDigest
             builder.Services.AddScoped<ChatApiService>();
             builder.Services.AddScoped<ChatMessageApiService>();
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7253/") });
-            builder.Services.AddSingleton<UserService>();
+            var currentAssembly = typeof(Program).Assembly;
+
+            builder.Services.AddSingleton<ApiRequest.Services.UserService>();
             var app = builder.Build();
 
             if (!app.Environment.IsDevelopment())

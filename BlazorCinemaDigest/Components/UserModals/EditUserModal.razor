@@ -22,9 +22,7 @@
 		var userData = await ApiRequest.GetAllUsersAsync();
 		parentUsers = userData?.data?.users ?? parentUsers;
 		IsVisible = false;
-		IsVisibleChanged.InvokeAsync(IsVisible);
-
-		
+		IsVisibleChanged.InvokeAsync(IsVisible);	
 	}
 	protected override async Task OnInitializedAsync()
 	{

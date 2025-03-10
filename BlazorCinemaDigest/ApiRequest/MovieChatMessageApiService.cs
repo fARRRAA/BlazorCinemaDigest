@@ -54,6 +54,39 @@ namespace BlazorCinemaDigest.ApiRequest.Services
             response.EnsureSuccessStatusCode();
 
         }
+
+        public async Task EditMovieMessage(int id, MovieChatMessageRequest msg)
+        {
+            var url = $"api/movieChat/movie/message/edit/{id}";
+            var content = new StringContent(JsonSerializer.Serialize(msg), Encoding.UTF8, "application/json");
+            var str = await content.ReadAsStringAsync();
+            var response = await _httpClient.PutAsync(url, content);
+            response.EnsureSuccessStatusCode();
+            var suka = await response.Content.ReadAsStringAsync();
+        }
+        public async Task DeleteMovieMessage(int id)
+        {
+            var url = $"api/movieChat/movie/message/delete/{id}";
+            var response = await _httpClient.DeleteAsync(url);
+            response.EnsureSuccessStatusCode();
+            var suka = await response.Content.ReadAsStringAsync();
+        }
+        public async Task EditUserMessage(int id, UserChatMessageRequest msg)
+        {
+            var url = $"userChat/messages/update/{id}";
+            var content = new StringContent(JsonSerializer.Serialize(msg), Encoding.UTF8, "application/json");
+            var str = await content.ReadAsStringAsync();
+            var response = await _httpClient.PutAsync(url, content);
+            response.EnsureSuccessStatusCode();
+            var suka = await response.Content.ReadAsStringAsync();
+        }
+        public async Task DeleteUserMessage(int id)
+        {
+            var url = $"userChat/messages/delete/{id}";
+            var response = await _httpClient.DeleteAsync(url);
+            response.EnsureSuccessStatusCode();
+            var suka = await response.Content.ReadAsStringAsync();
+        }
     }
 
 }
